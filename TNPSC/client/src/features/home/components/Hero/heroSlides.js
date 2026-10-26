@@ -1,0 +1,35 @@
+import notificationBanner from "../../../../assets/images/hero/tnpsc-notification-banner.png";
+import currentAffairsBanner from "../../../../assets/images/hero/current-affairs-banner.png";
+import governmentSchemesBanner from "../../../../assets/images/hero/government-schemes-banner.png";
+import aiMentorBanner from "../../../../assets/images/hero/ai-mentor-banner.png";
+
+export const heroSlides = [
+  {
+    id: 1,
+    image: notificationBanner,
+    title: "Latest Notifications",
+    description: "Get instant government exam updates.",
+    link: "/notifications",
+  },
+  {
+    id: 2,
+    image: currentAffairsBanner,
+    title: "Daily Current Affairs",
+    description: "Stay updated with today's important events.",
+    link: "/current-affairs",
+  },
+  {
+    id: 3,
+    image: governmentSchemesBanner,
+    title: "Government Schemes",
+    description: "Explore central and state government welfare schemes.",
+    link: "/government-schemes",
+  },
+  {
+    id: 4,
+    image: aiMentorBanner,
+    title: "AI Tutor",
+    description: "Prepare smarter with your personal AI mentor.",
+    link: "/ai-tutor",
+  },
+];

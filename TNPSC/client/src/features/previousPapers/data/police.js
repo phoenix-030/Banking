@@ -1,0 +1,81 @@
+export const policePapers = [
+  {
+    id: 1,
+    year: 2007,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "https://drive.google.com/file/d/1IwttMCsqqOqEeCgBdMZJ8zEBDSPXNm36/view",
+  },
+  {
+    id: 2,
+    year: 2008,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 3,
+    year: 2009,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 4,
+    year: 2010,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 5,
+    year: 2012,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 6,
+    year: 2017,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+
+  {
+    id: 7,
+    year: 2018,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 8,
+    year: 2019,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 9,
+    year: 2020,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 10,
+    year: 2022,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+  {
+    id: 11,
+    year: 2023,
+    questions: 200,
+    language: "Tamil & English",
+    pdf: "#",
+  },
+
+];
