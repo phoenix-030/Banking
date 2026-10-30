@@ -1,0 +1,4 @@
+ALTER TABLE practice_answers ADD COLUMN IF NOT EXISTS manual_score NUMERIC(8,3);
+ALTER TABLE practice_answers ADD COLUMN IF NOT EXISTS grader_comment TEXT NOT NULL DEFAULT '';
+ALTER TABLE practice_answers ADD COLUMN IF NOT EXISTS graded_by UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE practice_answers ADD COLUMN IF NOT EXISTS graded_at TIMESTAMPTZ;
