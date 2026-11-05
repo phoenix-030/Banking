@@ -183,12 +183,12 @@ authRouter.post("/reset-password", resetLimiter, async (req, res) => {
         token: z.string().min(20).max(200),
         password: z
           .string()
-          .min(12)
+          .min(6)
           .max(128)
           .refine((value) => new TextEncoder().encode(value).length <= 72, {
             message: "Password must be at most 72 UTF-8 bytes.",
           }),
-        passwordConfirmation: z.string().min(12).max(128),
+        passwordConfirmation: z.string().min(6).max(128),
       })
       .refine((v) => v.password === v.passwordConfirmation, {
         path: ["passwordConfirmation"],
