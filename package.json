@@ -2,7 +2,7 @@
   "name": "banking-exam-preparation-platform",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "type": "moocule",
   "engines": {
     "node": ">=22"
   },
