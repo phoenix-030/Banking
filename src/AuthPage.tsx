@@ -41,8 +41,8 @@ export default function AuthPage({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: form.email }),
         });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? "Could not request reset.");
+        const d = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(d?.error ?? "Could not request reset. Make sure the backend server is running.");
         setNotice(d.message);
         return;
       }
@@ -56,8 +56,8 @@ export default function AuthPage({
             passwordConfirmation: form.passwordConfirmation,
           }),
         });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? "Could not reset the password.");
+        const d = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(d?.error ?? "Could not reset the password. Make sure the backend server is running.");
         setNotice(d.message);
         window.history.replaceState({}, "", window.location.pathname);
         setMode("login");
@@ -69,8 +69,8 @@ export default function AuthPage({
         credentials: "include",
         body: JSON.stringify(form),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Unable to sign in.");
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? "Unable to reach the server. Please ensure the backend is running on port 3001.");
       onAuthenticated(body.user);
     } catch (err) {
       setError(
