@@ -14,6 +14,7 @@ An exam preparation web application for Indian banking recruitment tests. It inc
 ## Quick Start & Setup
 
 ### 1. Install Dependencies
+
 Open PowerShell or your terminal in the project directory:
 
 ```powershell
@@ -21,6 +22,7 @@ npm install
 ```
 
 ### 2. Configure Environment (`.env`)
+
 Create your `.env` file from the example template:
 
 ```powershell
@@ -79,6 +81,7 @@ npm run db:seed-admin
 ## How to Run the Project
 
 ### Option 1: Run Full Application Together (Recommended)
+
 This runs both the backend Express API and the Vite frontend simultaneously with a single command:
 
 ```powershell
@@ -95,15 +98,19 @@ npm run dev:full
 If you prefer separate terminal windows for frontend and backend:
 
 **Terminal 1 (Backend API):**
+
 ```powershell
 npm run dev:server
 ```
+
 *Starts the Express server with file watching on `http://localhost:3001`.*
 
 **Terminal 2 (Frontend UI):**
+
 ```powershell
 npm run dev
 ```
+
 *Starts the Vite dev server on `http://localhost:5173`.*
 
 ---
@@ -143,10 +150,12 @@ In production, the Express server serves both the built website and API routes o
 ## Troubleshooting
 
 ### "Unexpected end of JSON input" or "Unable to reach the server"
+
 - This means your frontend is running, but the backend Express API on port `3001` is not started.
 - **Fix**: Run `npm run dev:full` instead of just `npm run dev`, or start `npm run dev:server` in a separate terminal.
 
 ### Database Connection Error
+
 - Check that your PostgreSQL service is running on `localhost:5432`.
 - Verify the username, password, and database name in `DATABASE_URL` inside `.env`.
 - Test running `npm run db:migrate` to verify connection.
