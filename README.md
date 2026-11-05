@@ -1,42 +1,132 @@
 # HHK Banking Exam Preparation Platform
 
-An exam preparation web application for Indian banking recruitment tests. It includes student accounts, exam and question administration, mock test authoring and delivery, practice, performance history, previous year questions, current affairs, and admin reporting.
+An exam preparation web application for Indian banking recruitment tests. It includes student accounts, exam and question administration, mock test authoring and delivery, topic practice, performance history, previous year questions, current affairs, and admin reporting.
 
-## Run on Windows
+---
 
-Install [Node.js 22 or later](https://nodejs.org/) and [Docker Desktop](https://www.docker.com/products/docker-desktop/). Docker Desktop supplies the PostgreSQL database used by the application.
+## Prerequisites
 
-In PowerShell, from this project folder:
+- **Node.js**: Version 20 or 22+ installed ([nodejs.org](https://nodejs.org/))
+- **PostgreSQL**: Either installed locally (via pgAdmin 4 / PostgreSQL installer) or via Docker Desktop.
+
+---
+
+## Quick Start & Setup
+
+### 1. Install Dependencies
+Open PowerShell or your terminal in the project directory:
 
 ```powershell
-npm ci
+npm install
+```
+
+### 2. Configure Environment (`.env`)
+Create your `.env` file from the example template:
+
+```powershell
 Copy-Item .env.example .env
 ```
 
-Open `.env` and replace the example values. Set `POSTGRES_PASSWORD` and use that same password in `DATABASE_URL`; set `SESSION_SECRET` to a random value with at least 32 characters; and set a unique `ADMIN_PASSWORD` with at least 12 characters. The SMTP settings are needed only for password-reset emails.
+Open `.env` and configure your credentials:
 
-Then start Docker Desktop and run:
+```env
+# Database Configuration
+POSTGRES_PASSWORD=your_postgres_password
+DATABASE_URL=postgresql://postgres:your_postgres_password@localhost:5432/your_database_name
+DATABASE_SSL=false
+
+# Server & Session
+PORT=3001
+NODE_ENV=development
+SESSION_SECRET=replace-with-at-least-32-random-characters
+APP_URL=http://localhost:5173
+
+# Admin Account Seeding
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-admin-password-12-or-more-characters
+ADMIN_FULL_NAME=HHK Administrator
+ADMIN_MOBILE=+919876543210
+
+# SMTP Email (Optional - needed for password reset emails)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+```
+
+> [!NOTE]
+> If your database name has spaces (e.g., `HHK Administrator`), encode the space as `%20`:
+> `DATABASE_URL=postgresql://postgres:TIGER@localhost:5432/HHK%20Administrator`
+
+### 3. Setup the Database
+
+Make sure your PostgreSQL server is running. Then apply migrations and create your administrator account:
 
 ```powershell
-docker compose up -d postgres
+# Run all database migrations (creates all 31 tables)
 npm run db:migrate
+
+# Seed your first administrator account
 npm run db:seed-admin
+```
+
+*(If using Docker Desktop for PostgreSQL instead of local install, run `docker compose up -d postgres` before running `npm run db:migrate`)*.
+
+---
+
+## How to Run the Project
+
+### Option 1: Run Full Application Together (Recommended)
+This runs both the backend Express API and the Vite frontend simultaneously with a single command:
+
+```powershell
 npm run dev:full
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Sign in to the administrator account using `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`. Stop the app with `Ctrl+C`; stop the database with `docker compose stop postgres`.
+- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:3001](http://localhost:3001)
 
-Useful commands:
+---
 
-- `npm run dev:full` starts the Vite website and Express API.
-- `npm run build` builds the website and checks TypeScript in both client and server code.
-- `npm run db:migrate` applies any unapplied SQL migrations.
-- `npm run db:seed-admin` creates the first administrator if the email does not already exist.
-- `docker compose down` stops and removes the database container; PostgreSQL data remains in its named volume. `docker compose down -v` also deletes that database volume and its data.
+### Option 2: Run in Separate Terminals
 
-## Production server
+If you prefer separate terminal windows for frontend and backend:
 
-After configuring production database credentials, SMTP, and a trusted HTTPS reverse proxy, build the website and start the API/static server:
+**Terminal 1 (Backend API):**
+```powershell
+npm run dev:server
+```
+*Starts the Express server with file watching on `http://localhost:3001`.*
+
+**Terminal 2 (Frontend UI):**
+```powershell
+npm run dev
+```
+*Starts the Vite dev server on `http://localhost:5173`.*
+
+---
+
+## All Available Commands
+
+| Command | Description |
+| :--- | :--- |
+| `npm run dev:full` | **Starts both backend API server and frontend website together** |
+| `npm run dev:server` | Starts the Express backend server in watch mode (`port 3001`) |
+| `npm run dev` | Starts the Vite frontend development server (`port 5173`) |
+| `npm run db:migrate` | Runs all pending SQL migrations against the database |
+| `npm run db:seed-admin` | Creates the default administrator user from `.env` values |
+| `npm run typecheck:server` | Type-checks server TypeScript files without emitting code |
+| `npm run build` | Builds the project: client bundle + server type check |
+| `npm run preview` | Previews the production client build locally |
+| `npm run start:server` | Runs the compiled server in production mode |
+
+---
+
+## Production Deployment
+
+To run in production mode:
 
 ```powershell
 npm ci
@@ -46,26 +136,26 @@ $env:NODE_ENV = "production"
 npm run start:server
 ```
 
-The Express server serves the built website and API on `PORT` (default `3001`). Keep the database private and terminate HTTPS at the reverse proxy; production session cookies require HTTPS.
+In production, the Express server serves both the built website and API routes on `PORT` (default `3001`).
 
-## Features implemented
+---
 
-- HHK branding and student registration, sign-in, sign-out, profile, and password reset email flow.
-- Role-protected admin workspace for exam configuration with cycle and official-notification provenance, topics, MCQ/image/passage/descriptive question authoring with evaluator rubric and manual grading queue, CSV/XLSX import preview and row errors, students, manual or rule-based mock tests with per-section topic/difficulty mixes, current affairs, reports, and audit history.
-- Student mock-test runner with server-side attempt deadlines, optional sectional timing and lockout, saved answers, a section question palette, server-side scoring, section results, objective explanations, and pending-review tracking for written responses.
-- Each mock attempt snapshots its question text, options, answer key, rubric, and scoring values so later admin edits do not change an active or completed result.
-- Topic practice, bookmarks, previous year question filters, current affairs quizzes with saved responses, persisted daily challenge sets, editable student profile, dashboards, leaderboard, and milestone achievements.
-- PostgreSQL persistence, session storage, password hashing, request validation, rate limits, and security headers.
+## Troubleshooting
 
-## Important content setup
+### "Unexpected end of JSON input" or "Unable to reach the server"
+- This means your frontend is running, but the backend Express API on port `3001` is not started.
+- **Fix**: Run `npm run dev:full` instead of just `npm run dev`, or start `npm run dev:server` in a separate terminal.
 
-Starter exam names in the database are drafts. Their patterns are placeholders marked pending verification; they are not official exam specifications. Before publishing, enter the notification cycle and HTTPS URL, confirm the stages, sections, timing, question counts, marks, and penalties against that official recruitment notification, then save the pattern. Publishing is blocked until the pattern is complete and has a source URL. Use question content that HHK has permission to publish, verify its source and year, and review answer keys and explanations before publishing.
+### Database Connection Error
+- Check that your PostgreSQL service is running on `localhost:5432`.
+- Verify the username, password, and database name in `DATABASE_URL` inside `.env`.
+- Test running `npm run db:migrate` to verify connection.
 
-## Current limitations
+---
 
-- A PostgreSQL server is required; the app cannot run fully with only Vite. If Docker Desktop is not installed, install it or configure a separate PostgreSQL server and update `DATABASE_URL`.
-- Password-reset email needs an SMTP provider and the `SMTP_*` values in `.env`.
-- Mock tests can use either a single overall timer or server-enforced section timers. When section timers are configured, every selected section needs a duration and their total must equal the mock test duration; expired sections close and the API rejects further answer changes in them.
-- Current-affairs and question content are not bundled; admins must add reviewed material. Descriptive mock and practice responses stay pending until an administrator grades them; mock grades recalculate the attempt score and leaderboard, while practice grades appear in the student response history.
-- Daily challenges draw up to five published questions per available subject area. Publish questions for Reasoning, Quantitative Aptitude, English Language, and General Awareness to get the full 20-question set.
-- Migrations are applied in filename order when `npm run db:migrate` runs. The repository has not been verified against a live PostgreSQL instance in this environment. Run the steps above to initialize it locally.
+## Features Implemented
+
+- **Student Workspace**: Registration, sign-in, profile, password reset, mock test runner with sectional timers, question palette, review status, daily challenges, and topic practice.
+- **Eye View Password Toggle**: Easy visibility toggle on sign-up, sign-in, and reset password forms.
+- **Admin Dashboard**: Exam pattern authoring, section configuration, MCQ / passage / descriptive questions, question bank import via CSV/Excel, student attempt grading queue, current affairs manager, and audit logs.
+- **Robust Security**: Bcrypt password hashing, session management with PostgreSQL session store, rate limiting, and HTTP security headers.
