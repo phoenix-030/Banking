@@ -2,6 +2,9 @@
 
 An exam preparation web application for Indian banking recruitment tests. It includes student accounts, exam and question administration, mock test authoring and delivery, topic practice, performance history, previous year questions, current affairs, and admin reporting.
 
+> [!TIP]
+> For a complete architectural flow map, database entity diagrams, and API lifecycle breakdown, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ---
 
 ## Prerequisites
