@@ -34,7 +34,7 @@
   border-bottom: 2px solid transparent;
   background: transparent;
   color: #818397;
-  font-size: 10px
+  font-size: 14px
 }
 
 .admin-tabs button.selected {
@@ -53,7 +53,7 @@
   border-radius: 5px;
   background: #f0efff;
   color: #6458cc;
-  font-size: 8px
+  font-size: 12px
 }
 
 .admin-panel {
@@ -71,14 +71,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 750 15px Manrope, sans-serif;
+  font: 750 17px Manrope, sans-serif;
   letter-spacing: -.2px;
   margin: 0
 }
 
 .admin-action {
   height: 32px;
-  font-size: 9px
+  font-size: 13px
 }
 
 .inline-add {
@@ -105,7 +105,7 @@
   padding: 0 10px;
   border: 1px solid #e7e7ef;
   border-radius: 6px;
-  font-size: 10px
+  font-size: 14px
 }
 
 .inline-add .primary-btn {
@@ -123,7 +123,7 @@
 .admin-footer>span {
   max-width: 410px;
   color: #9394a4;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.6
 }
 
@@ -137,7 +137,7 @@
 
 .admin-footer .primary-btn {
   height: 32px;
-  font-size: 9px
+  font-size: 13px
 }
 
 .admin-note {
@@ -149,7 +149,7 @@
   border-radius: 8px;
   background: #f3fbf7;
   color: #548c75;
-  font-size: 9px
+  font-size: 13px
 }
 
 .admin-note svg {
@@ -198,7 +198,7 @@
   border-radius: 5px;
   background: #f1f1f6;
   color: #818296;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700
 }
 
@@ -214,7 +214,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 9px
+  font-size: 13px
 }
 
 .option-input svg {
@@ -237,7 +237,7 @@
 }
 
 .saved-question-meta span {
-  font-size: 7px;
+  font-size: 11px;
   color: #787a8d;
   background: #f5f5f9;
   border-radius: 4px;
@@ -250,7 +250,7 @@
   background: #fff7e8;
   border-radius: 4px;
   padding: 4px 5px;
-  font-size: 7px
+  font-size: 11px
 }
 
 .saved-question-meta b.published {
@@ -263,7 +263,7 @@
   align-items: center;
   justify-content: space-between;
   color: #9293a2;
-  font-size: 8px
+  font-size: 12px
 }
 
 .saved-question-bottom button {
@@ -273,7 +273,7 @@
 .admin-disclaimer {
   margin: 0;
   color: #999aaa;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5
 }
 
@@ -300,12 +300,12 @@
   border: 0;
   background: transparent;
   color: #9e4545;
-  font-size: 8px
+  font-size: 12px
 }
 
 .admin-loading {
   color: #8c8da0;
-  font-size: 9px
+  font-size: 13px
 }
 
 .exam-status-row {
@@ -319,7 +319,7 @@
   display: grid;
   gap: 5px;
   color: #7f8093;
-  font-size: 9px
+  font-size: 13px
 }
 
 .exam-status-row select {
@@ -329,12 +329,12 @@
   border-radius: 5px;
   background: #fff;
   padding: 0 7px;
-  font-size: 9px
+  font-size: 13px
 }
 
 .exam-status-row>span {
   color: #9697a6;
-  font-size: 8px;
+  font-size: 12px;
   padding-bottom: 9px
 }
 
@@ -346,7 +346,7 @@
 }
 
 .import-controls input {
-  font-size: 9px;
+  font-size: 13px;
   color: #77798a
 }
 
@@ -365,23 +365,23 @@
 }
 
 .upload-results>div b {
-  font: 700 14px Manrope, sans-serif;
+  font: 700 16px Manrope, sans-serif;
   color: #3a3c50
 }
 
 .upload-results>div span {
-  font-size: 8px;
+  font-size: 12px;
   color: #898a9b
 }
 
 .upload-results .primary-btn {
   height: 31px;
-  font-size: 8px
+  font-size: 12px
 }
 
 .upload-results details {
   flex-basis: 100%;
-  font-size: 8px;
+  font-size: 12px;
   color: #8b6262
 }
 
@@ -404,13 +404,13 @@
   border-radius: 7px;
   padding: 12px;
   color: #55576b;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.65
 }
 
 .question-preview>span {
   color: #766bd4;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700
 }
 
@@ -434,7 +434,7 @@
   padding: 0 9px;
   border: 1px solid #e8e8ef;
   border-radius: 6px;
-  font-size: 9px
+  font-size: 13px
 }
 
 .admin-stats {
@@ -446,12 +446,12 @@
 }
 
 .admin-quicklinks h2 {
-  font: 750 15px Manrope, sans-serif
+  font: 750 17px Manrope, sans-serif
 }
 
 .admin-quicklinks p {
   margin: 9px 0 14px;
-  font-size: 10px;
+  font-size: 14px;
   color: #898b9c
 }
 
@@ -468,11 +468,11 @@
 }
 
 .test-question-picker>strong {
-  font-size: 10px
+  font-size: 14px
 }
 
 .test-question-picker>span {
-  font-size: 8px;
+  font-size: 12px;
   color: #898a9b
 }
 
@@ -488,12 +488,12 @@
 }
 
 .test-question-picker>label span {
-  font-size: 8px;
+  font-size: 12px;
   color: #77798b
 }
 
 .test-question-picker>label small {
-  font-size: 8px;
+  font-size: 12px;
   color: #9697a6;
   white-space: nowrap;
   overflow: hidden;
@@ -501,7 +501,7 @@
 }
 
 .test-question-picker>p {
-  font-size: 9px;
+  font-size: 13px;
   color: #9697a6
 }
 
@@ -516,7 +516,7 @@
 }
 
 .quiz-author h4 {
-  font-size: 9px;
+  font-size: 13px;
   margin: 0
 }
 
@@ -528,7 +528,7 @@
   border: 1px solid #e8e8ef;
   border-radius: 5px;
   background: #fff;
-  font: 9px 'DM Sans', sans-serif
+  font: 13px 'DM Sans', sans-serif
 }
 
 .quiz-author .option-input {
@@ -541,7 +541,7 @@
 
 .rule-selector-heading span,
 .rule-section-heading span {
-  font-size: 8px;
+  font-size: 12px;
   color: #898a9b
 }
 
@@ -561,7 +561,7 @@
 }
 
 .rule-section-heading strong {
-  font-size: 9px
+  font-size: 13px
 }
 
 .topic-weight-list {
@@ -577,7 +577,7 @@
   padding: 5px 7px;
   border: 1px solid #eeeef3;
   border-radius: 5px;
-  font-size: 8px;
+  font-size: 12px;
   color: #66687a
 }
 
@@ -590,7 +590,7 @@
   padding: 4px;
   border: 1px solid #e8e8ef;
   border-radius: 4px;
-  font-size: 8px
+  font-size: 12px
 }
 
 .topic-weight-list i {
@@ -644,7 +644,7 @@
   padding: 14px;
   background: #f7f7fa;
   border-radius: 7px;
-  font: 13px/1.65 inherit
+  font: 15px/1.65 inherit
 }
 
 .grading-card details {
@@ -654,7 +654,7 @@
 
 .grading-card summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600
 }
 
@@ -686,7 +686,7 @@
 .bulk-question-actions strong {
   margin-right: auto;
   color: #554bb7;
-  font-size: 12px
+  font-size: 15px
 }
 
 .question-select {
@@ -694,7 +694,7 @@
   align-items: center;
   gap: 5px;
   color: #717487;
-  font-size: 10px
+  font-size: 14px
 }
 
 .question-select input {

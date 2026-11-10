@@ -25,7 +25,7 @@
   gap: 10px;
   padding: 0 9px;
   font-family: Manrope, sans-serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -.8px
 }
@@ -55,14 +55,14 @@
 .brand-name {
   font-family: Manrope, sans-serif;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: .4px;
   color: #17366c
 }
 
 .workspace-label {
   color: #a5a6b5;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 1.15px;
   padding: 0 11px;
@@ -85,7 +85,7 @@
   gap: 12px;
   text-align: left;
   color: #74768b;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
   transition: .18s
 }
@@ -111,7 +111,7 @@
   background: #fff;
   color: #766de0;
   padding: 2px 7px;
-  font-size: 10px
+  font-size: 14px
 }
 
 .side-separator {
@@ -149,7 +149,7 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 10px
+  font-size: 14px
 }
 
 .profile-copy {
@@ -159,12 +159,12 @@
 }
 
 .profile-copy strong {
-  font-size: 11px
+  font-size: 14px
 }
 
 .profile-copy span {
   color: #9293a4;
-  font-size: 9px
+  font-size: 13px
 }
 
 .profile-row>svg {
@@ -194,7 +194,7 @@
   align-items: center;
   gap: 10px;
   color: #9697a8;
-  font-size: 11px
+  font-size: 14px
 }
 
 .breadcrumb strong {
@@ -230,7 +230,7 @@
   border: 0;
   outline: none;
   background: transparent;
-  font-size: 10px;
+  font-size: 14px;
   color: #303247
 }
 
@@ -239,7 +239,7 @@
 }
 
 .search-box kbd {
-  font: 9px 'DM Sans', sans-serif;
+  font: 13px 'DM Sans', sans-serif;
   color: #9899a8;
   border: 1px solid #ececf1;
   border-radius: 4px;
@@ -275,7 +275,7 @@
   border: 0;
   background: transparent;
   color: #747589;
-  font-size: 10px
+  font-size: 14px
 }
 
 .content {
@@ -289,7 +289,7 @@ footer {
   align-items: center;
   gap: 17px;
   color: #aaaab7;
-  font-size: 8px;
+  font-size: 12px;
   padding: 20px 2px 0
 }
 
@@ -311,7 +311,7 @@ footer button {
   border: 0;
   background: transparent;
   color: #858697;
-  font-size: 8px;
+  font-size: 12px;
   padding: 2px
 }
 
@@ -347,7 +347,7 @@ footer button {
   }
 
   .practice-main>span {
-    font-size: 7px
+    font-size: 11px
   }
 
   .search-box {

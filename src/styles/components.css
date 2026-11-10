@@ -10,7 +10,7 @@ input:focus-visible {
 }
 
 .tiny-label {
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: .7px
 }
@@ -41,7 +41,7 @@ input:focus-visible {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 1px;
   font-weight: 700;
   color: #898a9c
@@ -55,12 +55,12 @@ input:focus-visible {
 }
 
 .wave {
-  font-size: 20px;
+  font-size: 22px;
   color: #e7ac43
 }
 
 .subheading {
-  font-size: 11px;
+  font-size: 14px;
   color: #9293a4;
   margin: 0
 }
@@ -76,7 +76,7 @@ input:focus-visible {
   gap: 8px;
   height: 37px;
   padding: 0 14px;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   box-shadow: 0 3px 7px #6557dc25;
   transition: .17s
@@ -148,13 +148,13 @@ input:focus-visible {
 .stat-label {
   display: block;
   color: #87889b;
-  font-size: 10px;
+  font-size: 14px;
   margin: 8px 0 1px
 }
 
 .stat-value {
   font-family: Manrope, sans-serif;
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: -.6px;
   font-weight: 750;
   line-height: 1.2
@@ -162,7 +162,7 @@ input:focus-visible {
 
 .stat-value small {
   font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0;
   color: #9596a6;
@@ -174,7 +174,7 @@ input:focus-visible {
   align-items: center;
   gap: 3px;
   color: #9697a6;
-  font-size: 9px;
+  font-size: 13px;
   margin-top: 4px
 }
 
@@ -206,7 +206,7 @@ input:focus-visible {
 
 .section-kicker {
   color: #a0a1b1;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .9px;
   margin-bottom: 5px
@@ -214,7 +214,7 @@ input:focus-visible {
 
 .section-heading h2 {
   font-family: Manrope, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: -.25px;
   margin: 0;
   font-weight: 750
@@ -225,7 +225,7 @@ input:focus-visible {
   align-items: center;
   gap: 5px;
   color: #747588;
-  font-size: 9px
+  font-size: 13px
 }
 
 .icon-btn.small {
@@ -238,7 +238,7 @@ input:focus-visible {
   align-items: center;
   gap: 17px;
   color: #9899a8;
-  font-size: 9px
+  font-size: 13px
 }
 
 .chart-legend>span {
@@ -270,7 +270,7 @@ input:focus-visible {
 
 .chart-total strong {
   font-family: Manrope, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: #36384c
 }
 
@@ -278,7 +278,7 @@ input:focus-visible {
   display: flex;
   align-items: center;
   color: #36a384;
-  font-size: 8px
+  font-size: 12px
 }
 
 .chart {
@@ -295,7 +295,7 @@ input:focus-visible {
   align-items: end;
   padding: 0 0 19px;
   color: #b1b2c0;
-  font-size: 8px
+  font-size: 12px
 }
 
 .chart-main {
@@ -366,7 +366,7 @@ input:focus-visible {
 }
 
 .bar-group>span {
-  font-size: 8px;
+  font-size: 12px;
   color: #aaabba
 }
 
@@ -429,19 +429,19 @@ input:focus-visible {
 .sparkle-one {
   top: 7px;
   right: 16px;
-  font-size: 13px
+  font-size: 15px
 }
 
 .sparkle-two {
   left: 8px;
   top: 30px;
-  font-size: 18px
+  font-size: 20px
 }
 
 .sparkle-three {
   bottom: 11px;
   right: 13px;
-  font-size: 24px;
+  font-size: 26px;
   color: #ecc870
 }
 
@@ -461,13 +461,13 @@ input:focus-visible {
   background: #f0efff;
   color: #6559cf;
   padding: 4px 6px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .55px
 }
 
 .exam-info>strong {
-  font-size: 12px;
+  font-size: 15px;
   margin-top: 4px
 }
 
@@ -476,7 +476,7 @@ input:focus-visible {
   align-items: center;
   gap: 5px;
   color: #9394a4;
-  font-size: 9px
+  font-size: 13px
 }
 
 .exam-date svg {
@@ -504,17 +504,17 @@ input:focus-visible {
 
 .countdown b {
   font-family: Manrope, sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.1
 }
 
 .countdown span {
-  font-size: 7px;
+  font-size: 11px;
   color: #9697a7
 }
 
 .countdown>i {
-  font-size: 15px;
+  font-size: 17px;
   font-style: normal;
   color: #babac8;
   margin-top: -7px
@@ -527,7 +527,7 @@ input:focus-visible {
   border: 0;
   background: none;
   color: #6256cd;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600;
   padding: 0
 }
@@ -546,7 +546,7 @@ input:focus-visible {
 }
 
 .all-link {
-  font-size: 9px
+  font-size: 13px
 }
 
 .row-progress {
@@ -568,7 +568,7 @@ input:focus-visible {
   border-radius: 4px;
   background: #f4f4fa;
   color: #88899b;
-  font-size: 8px;
+  font-size: 12px;
   padding: 4px 7px;
   white-space: nowrap
 }
@@ -604,7 +604,7 @@ input:focus-visible {
 }
 
 .insight-note {
-  font-size: 9px;
+  font-size: 13px;
   color: #9697a7;
   margin: 8px 0 13px
 }
@@ -625,7 +625,7 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
   margin-top: 15px
 }
@@ -648,7 +648,7 @@ input:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 14px;
   animation: toast-in .2s ease-out
 }
 
@@ -700,7 +700,7 @@ input:focus-visible {
   color: #5d51ca;
   padding: 5px 7px;
   border-radius: 4px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600
 }
 
@@ -709,7 +709,7 @@ input:focus-visible {
   align-items: center;
   gap: 10px;
   color: #898a9d;
-  font-size: 8px;
+  font-size: 12px;
   margin: 17px 0
 }
 
@@ -735,12 +735,12 @@ input:focus-visible {
 }
 
 .question-body h3 {
-  font: 600 12px/1.7 'DM Sans', sans-serif;
+  font: 600 15px/1.7 'DM Sans', sans-serif;
   margin: 12px 0 7px
 }
 
 .question-body p {
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.7;
   color: #77798b;
   margin: 0 0 8px
@@ -767,7 +767,7 @@ input:focus-visible {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 8px
+  font-size: 12px
 }
 
 .outline-btn:disabled {
@@ -781,7 +781,7 @@ input:focus-visible {
 
 .next-btn {
   height: 31px;
-  font-size: 8px;
+  font-size: 12px;
   padding: 0 10px
 }
 
@@ -868,7 +868,7 @@ input:focus-visible {
   }
 
   .welcome-row h1 {
-    font-size: 23px
+    font-size: 25px
   }
 
   .welcome-row .primary-btn {
@@ -886,7 +886,7 @@ input:focus-visible {
   }
 
   .stat-value {
-    font-size: 20px
+    font-size: 22px
   }
 
   .focus-grid,
@@ -942,11 +942,11 @@ input:focus-visible {
   }
 
   .practice-main strong {
-    font-size: 9px
+    font-size: 13px
   }
 
   .practice-main>span {
-    font-size: 7px
+    font-size: 11px
   }
 
   .daily-challenge {
@@ -963,7 +963,7 @@ input:focus-visible {
 
   footer {
     gap: 10px;
-    font-size: 7px
+    font-size: 11px
   }
 
   .test-modal {
@@ -1018,7 +1018,7 @@ input:focus-visible {
 
 @media(max-width:370px) {
   .eyebrow {
-    font-size: 8px
+    font-size: 12px
   }
 
   .week-switch {
@@ -1026,7 +1026,7 @@ input:focus-visible {
   }
 
   .section-heading h2 {
-    font-size: 13px
+    font-size: 15px
   }
 
   .chart-legend {
@@ -1034,11 +1034,11 @@ input:focus-visible {
   }
 
   .chart-legend>span {
-    font-size: 8px
+    font-size: 12px
   }
 
   .chart-total strong {
-    font-size: 12px
+    font-size: 15px
   }
 
   .palette-row {
@@ -1057,7 +1057,7 @@ input:focus-visible {
   border-radius: 6px;
   background: #fff9ed;
   color: #a6782f;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .55px
 }
@@ -1074,7 +1074,7 @@ input:focus-visible {
   display: grid;
   gap: 6px;
   color: #7f8093;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600
 }
 
@@ -1086,7 +1086,7 @@ input:focus-visible {
   border: 1px solid #e8e8ef;
   border-radius: 6px;
   background: #fff;
-  font-size: 10px
+  font-size: 14px
 }
 
 .config-fields {
@@ -1100,7 +1100,7 @@ input:focus-visible {
   display: grid;
   gap: 6px;
   color: #7f8093;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600
 }
 
@@ -1111,7 +1111,7 @@ input:focus-visible {
   border-radius: 6px;
   padding: 9px 10px;
   background: #fff;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 400;
   resize: vertical
 }
@@ -1143,7 +1143,7 @@ input:focus-visible {
   padding: 10px 11px;
   background: #fafafd;
   color: #9394a5;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .35px
 }
@@ -1161,7 +1161,7 @@ input:focus-visible {
   border: 1px solid #eaeaf0;
   border-radius: 5px;
   background: #fff;
-  font-size: 9px
+  font-size: 13px
 }
 
 .section-table td:first-child {
@@ -1188,7 +1188,7 @@ input:focus-visible {
 
 .form-label {
   color: #7f8093;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 7px
 }
@@ -1228,7 +1228,7 @@ input:focus-visible {
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 8px
+  font-size: 12px
 }
 
 .saved-question {
@@ -1238,7 +1238,7 @@ input:focus-visible {
 }
 
 .saved-question p {
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.6;
   color: #44465a;
   margin: 10px 0
@@ -1266,12 +1266,12 @@ input:focus-visible {
 }
 
 .empty-questions strong {
-  font-size: 11px;
+  font-size: 14px;
   color: #56586d
 }
 
 .empty-questions span {
-  font-size: 9px
+  font-size: 13px
 }
 
 @media(max-width:900px) {
@@ -1330,12 +1330,12 @@ input:focus-visible {
   }
 
   .admin-panel-heading h2 {
-    font-size: 13px
+    font-size: 15px
   }
 
   .admin-tabs button {
     padding: 9px 8px;
-    font-size: 9px
+    font-size: 13px
   }
 }
 
@@ -1345,7 +1345,7 @@ input:focus-visible {
 
 .target-error {
   color: #a75b5b;
-  font-size: 8px
+  font-size: 12px
 }
 
 .test-builder {
@@ -1357,7 +1357,7 @@ input:focus-visible {
 }
 
 .daily-challenge-card>h2 {
-  font: 600 16px/1.6 'DM Sans', sans-serif;
+  font: 600 18px/1.6 'DM Sans', sans-serif;
   color: #303247;
   margin: 20px 0
 }
@@ -1374,7 +1374,7 @@ input:focus-visible {
 }
 
 .rule-selector-heading strong {
-  font-size: 10px
+  font-size: 14px
 }
 
 .topic-mix-toggle {
@@ -1382,11 +1382,11 @@ input:focus-visible {
   align-items: center;
   gap: 6px;
   color: #67697d;
-  font-size: 8px
+  font-size: 12px
 }
 
 .rule-total {
-  font-size: 8px;
+  font-size: 12px;
   color: #4e8a6b
 }
 
@@ -1401,7 +1401,7 @@ input:focus-visible {
 }
 
 .pattern-verified-note {
-  font-size: 12px;
+  font-size: 15px;
   color: #63746d;
   margin: 4px 0 14px
 }

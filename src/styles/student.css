@@ -23,7 +23,7 @@
   appearance: none;
   background: transparent;
   color: #25273c;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   padding: 1px 0
 }
@@ -33,7 +33,7 @@
   align-items: center;
   gap: 6px;
   color: #838599;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 9px
 }
 
@@ -60,7 +60,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 7px;
-  font-size: 9px;
+  font-size: 13px;
   color: #8e8fa1
 }
 
@@ -96,12 +96,12 @@
 }
 
 .streak-card strong {
-  font-size: 11px;
+  font-size: 14px;
   color: #514437
 }
 
 .streak-card span {
-  font-size: 9px;
+  font-size: 13px;
   color: #a98b69
 }
 
@@ -159,7 +159,7 @@
 }
 
 .practice-main strong {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -172,7 +172,7 @@
   align-items: center;
   gap: 6px;
   color: #9b9cad;
-  font-size: 8px
+  font-size: 12px
 }
 
 .practice-main>span i {
@@ -198,11 +198,11 @@
 }
 
 .challenge-copy strong {
-  font-size: 9px
+  font-size: 13px
 }
 
 .challenge-copy span {
-  font-size: 8px;
+  font-size: 12px;
   color: #999aaa
 }
 
@@ -236,12 +236,12 @@
 }
 
 .focus-title strong {
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 600
 }
 
 .focus-title span {
-  font-size: 7px;
+  font-size: 11px;
   color: #9c9dac;
   background: #f5f5f9;
   border-radius: 4px;
@@ -250,7 +250,7 @@
 
 .focus-title>b {
   font-family: Manrope, sans-serif;
-  font-size: 10px
+  font-size: 14px
 }
 
 .focus-meter {
@@ -286,7 +286,7 @@
 }
 
 .test-top h2 {
-  font: 750 19px Manrope, sans-serif;
+  font: 750 21px Manrope, sans-serif;
   letter-spacing: -.5px;
   margin: 8px 0 0
 }
@@ -302,7 +302,7 @@
   padding: 0 11px;
   margin-top: 17px;
   color: #77798e;
-  font-size: 9px
+  font-size: 13px
 }
 
 .timer-strip svg {
@@ -310,7 +310,7 @@
 }
 
 .timer-strip strong {
-  font: 700 13px Manrope, sans-serif;
+  font: 700 15px Manrope, sans-serif;
   color: #292b42
 }
 
@@ -318,7 +318,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 8px;
+  font-size: 12px;
   color: #7670c6;
   font-weight: 700;
   letter-spacing: .6px
@@ -353,7 +353,7 @@
   background: #fff;
   text-align: left;
   color: #686a7e;
-  font-size: 9px
+  font-size: 13px
 }
 
 .option:hover {
@@ -375,7 +375,7 @@
   display: grid;
   place-items: center;
   font-style: normal;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   color: #898a9d
 }
@@ -407,7 +407,7 @@
   align-items: center;
   gap: 12px;
   color: #868798;
-  font-size: 8px
+  font-size: 12px
 }
 
 .palette-row>div {
@@ -423,7 +423,7 @@
   border-radius: 5px;
   background: #fff;
   color: #898a9a;
-  font-size: 8px
+  font-size: 12px
 }
 
 .palette-row>div button.palette-current {
@@ -446,7 +446,7 @@
   border: 0;
   background: transparent;
   color: #685cd2;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600
 }
 
@@ -459,11 +459,11 @@
 }
 
 .student-welcome h1 {
-  font-size: 25px
+  font-size: 27px
 }
 
 .student-welcome p {
-  font-size: 10px;
+  font-size: 14px;
   color: #9192a3;
   margin: 0
 }
@@ -499,19 +499,19 @@
 }
 
 .history-row strong {
-  font-size: 10px;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis
 }
 
 .history-row span {
-  font-size: 8px;
+  font-size: 12px;
   color: #9697a7
 }
 
 .history-row>b {
-  font: 700 10px Manrope, sans-serif;
+  font: 700 14px Manrope, sans-serif;
   white-space: nowrap
 }
 
@@ -529,12 +529,12 @@
 }
 
 .test-card h2 {
-  font: 750 15px Manrope, sans-serif;
+  font: 750 17px Manrope, sans-serif;
   margin: 9px 0 5px
 }
 
 .test-card p {
-  font-size: 9px;
+  font-size: 13px;
   color: #9293a3;
   margin: 0 0 8px
 }
@@ -544,7 +544,7 @@
   align-items: center;
   gap: 5px;
   color: #87889a;
-  font-size: 8px
+  font-size: 12px
 }
 
 .test-card>.primary-btn {
@@ -567,11 +567,11 @@
   border-radius: 6px;
   background: #fff;
   padding: 0 9px;
-  font-size: 9px
+  font-size: 13px
 }
 
 .pyq-card p {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.7;
   color: #4f5166;
   margin: 12px 0
@@ -584,7 +584,7 @@
 }
 
 .pyq-options>span {
-  font-size: 9px;
+  font-size: 13px;
   color: #696b7e
 }
 
@@ -598,12 +598,12 @@
 }
 
 .affair-card h2 {
-  font: 750 15px Manrope, sans-serif;
+  font: 750 17px Manrope, sans-serif;
   margin: 10px 0 7px
 }
 
 .affair-card p {
-  font-size: 10px;
+  font-size: 14px;
   color: #67697d;
   line-height: 1.8;
   white-space: pre-wrap
@@ -615,7 +615,7 @@
 }
 
 .affair-question>strong {
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.6
 }
 
@@ -625,7 +625,7 @@
   background: #eef9f3;
   border-radius: 6px;
   color: #367d60;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.6
 }
 
@@ -640,12 +640,12 @@
 }
 
 .achievement-title {
-  font-size: 14px !important;
+  font-size: 16px !important;
   min-height: 36px
 }
 
 .student-workspace .stat-card p {
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
   color: #8f90a0;
   margin: 7px 0 0
@@ -666,12 +666,12 @@
 }
 
 .profile-details span {
-  font-size: 8px;
+  font-size: 12px;
   color: #9293a4
 }
 
 .profile-details b {
-  font-size: 10px
+  font-size: 14px
 }
 
 .cbt-screen {
@@ -695,7 +695,7 @@
 }
 
 .cbt-header h1 {
-  font: 700 13px Manrope, sans-serif;
+  font: 700 15px Manrope, sans-serif;
   margin: 6px 0 0
 }
 
@@ -704,7 +704,7 @@
   align-items: center;
   gap: 8px;
   color: #77798a;
-  font-size: 9px
+  font-size: 13px
 }
 
 .cbt-timer svg {
@@ -712,7 +712,7 @@
 }
 
 .cbt-timer b {
-  font: 750 16px Manrope, sans-serif;
+  font: 750 18px Manrope, sans-serif;
   color: #303247
 }
 
@@ -738,7 +738,7 @@
   align-items: center;
   gap: 9px;
   color: #848597;
-  font-size: 9px
+  font-size: 13px
 }
 
 .cbt-question-meta>span:nth-child(2) {
@@ -746,7 +746,7 @@
 }
 
 .cbt-question-card>h2 {
-  font: 600 14px/1.7 'DM Sans', sans-serif;
+  font: 600 16px/1.7 'DM Sans', sans-serif;
   color: #303247;
   margin: 27px 0
 }
@@ -767,7 +767,7 @@
   background: #fff;
   text-align: left;
   color: #595b70;
-  font-size: 10px
+  font-size: 14px
 }
 
 .cbt-option:hover {
@@ -791,7 +791,7 @@
   border-radius: 6px;
   background: #f3f3f8;
   color: #838497;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700
 }
 
@@ -820,11 +820,11 @@
 }
 
 .cbt-palette>strong {
-  font: 700 12px Manrope, sans-serif
+  font: 700 15px Manrope, sans-serif
 }
 
 .cbt-palette>p {
-  font-size: 8px;
+  font-size: 12px;
   color: #9293a3
 }
 
@@ -841,7 +841,7 @@
   border-radius: 6px;
   background: #fff;
   color: #88899a;
-  font-size: 9px
+  font-size: 13px
 }
 
 .palette-dot.current {
@@ -876,7 +876,7 @@
   gap: 7px;
   margin-top: 18px;
   color: #878899;
-  font-size: 8px
+  font-size: 12px
 }
 
 .palette-legend span {
@@ -910,7 +910,7 @@
   justify-content: space-between;
   padding: 0 24px;
   color: #8f90a0;
-  font-size: 8px
+  font-size: 12px
 }
 
 .cbt-footer>span:nth-child(2) {
@@ -931,30 +931,30 @@
 
 .result-review>span {
   color: #7a70d2;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700
 }
 
 .result-review h3 {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
   margin: 7px 0
 }
 
 .result-review>div {
-  font-size: 9px;
+  font-size: 13px;
   color: #66687b
 }
 
 .result-review>p {
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.6;
   color: #747689;
   margin: 7px 0
 }
 
 .result-review>small {
-  font-size: 8px;
+  font-size: 12px;
   color: #999aaa
 }
 
@@ -984,11 +984,11 @@
 }
 
 .student-streak strong {
-  font-size: 9px
+  font-size: 13px
 }
 
 .student-streak small {
-  font-size: 8px;
+  font-size: 12px;
   color: #a18b6c
 }
 
@@ -1019,7 +1019,7 @@
   }
 
   .cbt-header .outline-btn {
-    font-size: 8px;
+    font-size: 12px;
     padding: 0 7px
   }
 
@@ -1032,7 +1032,7 @@
   }
 
   .cbt-timer b {
-    font-size: 12px
+    font-size: 15px
   }
 
   .cbt-main {
@@ -1066,7 +1066,7 @@
   }
 
   .cbt-question-card>h2 {
-    font-size: 12px;
+    font-size: 15px;
     margin: 17px 0
   }
 
@@ -1106,7 +1106,7 @@
   border: 1px solid #e8e8ef;
   border-radius: 6px;
   background: #fff;
-  font-size: 9px;
+  font-size: 13px;
   padding: 0 8px
 }
 
@@ -1136,12 +1136,12 @@
 }
 
 .challenge-score strong {
-  font: 700 20px Manrope, sans-serif;
+  font: 700 22px Manrope, sans-serif;
   color: #5b50c4
 }
 
 .challenge-score span {
-  font-size: 9px;
+  font-size: 13px;
   color: #85869a
 }
 
@@ -1173,11 +1173,11 @@
 }
 
 .challenge-complete strong {
-  font-size: 11px
+  font-size: 14px
 }
 
 .challenge-complete span {
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.5
 }
 
@@ -1233,7 +1233,7 @@
 .pattern-cycle-label {
   display: block;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 15px;
   color: #676b7a
 }
 
@@ -1243,7 +1243,7 @@
   gap: 6px;
   margin-top: 8px;
   color: #6158bd;
-  font-size: 12px;
+  font-size: 15px;
   text-decoration: none
 }
 
@@ -1256,7 +1256,7 @@
   gap: 9px;
   margin: 14px 0;
   color: #555a6a;
-  font-size: 13px
+  font-size: 15px
 }
 
 .descriptive-response textarea {
@@ -1265,7 +1265,7 @@
   padding: 13px;
   border: 1px solid #e1e3e9;
   border-radius: 8px;
-  font: 14px/1.65 inherit;
+  font: 16px/1.65 inherit;
   resize: vertical
 }
 
@@ -1287,7 +1287,7 @@
   padding: 12px;
   background: #f7f7fa;
   border-radius: 7px;
-  font: 13px/1.6 inherit
+  font: 15px/1.6 inherit
 }
 
 .descriptive-result span {
