@@ -33,6 +33,37 @@ const resetLimiter = rateLimit({
   limit: 10,
   ...limiterOptions,
 });
+
+const failedLoginMap = new Map<string, { attempts: number; lockedUntil?: number }>();
+
+function getLockoutStatus(email: string): { locked: boolean; waitMinutes?: number } {
+  const key = email.toLowerCase();
+  const record = failedLoginMap.get(key);
+  if (!record || !record.lockedUntil) return { locked: false };
+  const now = Date.now();
+  if (now > record.lockedUntil) {
+    failedLoginMap.delete(key);
+    return { locked: false };
+  }
+  const waitMinutes = Math.ceil((record.lockedUntil - now) / 60000);
+  return { locked: true, waitMinutes };
+}
+
+function handleFailedLogin(email: string) {
+  const key = email.toLowerCase();
+  const now = Date.now();
+  const record = failedLoginMap.get(key) ?? { attempts: 0 };
+  record.attempts += 1;
+  if (record.attempts >= 5) {
+    record.lockedUntil = now + 15 * 60 * 1000;
+  }
+  failedLoginMap.set(key, record);
+}
+
+function handleSuccessfulLogin(email: string) {
+  failedLoginMap.delete(email.toLowerCase());
+}
+
 const userFields = "id,email,full_name,mobile,role,created_at";
 const publicUser = (u: any) => ({
   id: u.id,
@@ -83,6 +114,12 @@ authRouter.post("/register", registerLimiter, async (req, res) => {
 });
 authRouter.post("/login", loginLimiter, async (req, res) => {
   const input = validate(loginSchema, req.body);
+  const lockout = getLockoutStatus(input.email);
+  if (lockout.locked) {
+    return res.status(429).json({
+      error: `Account temporarily locked due to multiple failed sign-in attempts. Please try again in ${lockout.waitMinutes} minutes.`,
+    });
+  }
   const result = await pool.query(
     `SELECT ${userFields},password_hash,is_active FROM users WHERE email=$1`,
     [input.email],
@@ -92,8 +129,11 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     !u ||
     !u.is_active ||
     !(await bcrypt.compare(input.password, u.password_hash))
-  )
+  ) {
+    handleFailedLogin(input.email);
     return res.status(401).json({ error: "Email or password is incorrect." });
+  }
+  handleSuccessfulLogin(input.email);
   await regen(req);
   req.session.userId = u.id;
   req.session.role = u.role;
