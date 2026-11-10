@@ -1,70 +1,12 @@
 import { useEffect, useState } from "react";
+import { BookOpen } from "lucide-react";
+import { ExamSetupView, type Exam, type Stage, type Section } from "./components/admin/ExamSetupView";
 import {
-  BookOpen,
-  Check,
-  CirclePlus,
-  Copy,
-  FileQuestion,
-  FileSpreadsheet,
-  Plus,
-  Save,
-  Search,
-  Trash2,
-} from "lucide-react";
+  QuestionBankView,
+  type Question,
+  type QuestionForm,
+} from "./components/admin/QuestionBankView";
 
-type Section = {
-  id: string;
-  name: string;
-  question_count: number;
-  duration_seconds: number | null;
-  marks_per_correct: number;
-  negative_marks: number;
-  sort_order: number;
-};
-type Stage = {
-  id?: string;
-  name: string;
-  duration_seconds: number;
-  sort_order: number;
-  sections: Section[];
-};
-type Exam = {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  pattern_cycle: string | null;
-  pattern_source_url: string | null;
-  pattern_verified_at: string | null;
-  status: "draft" | "published" | "archived";
-  stages: Stage[];
-};
-type Question = {
-  id: string;
-  exam_name: string;
-  stage_name: string;
-  section_id: string;
-  section_name: string;
-  topic_name: string;
-  difficulty: string;
-  question_type: string;
-  language: string;
-  question_text: string;
-  image_url: string | null;
-  passage_group_id: string | null;
-  passage_title: string | null;
-  passage_text: string | null;
-  passage_language: string | null;
-  passage_image_url: string | null;
-  options: { key: string; text: string }[];
-  correct_answer: string;
-  explanation: string;
-  marks: number;
-  negative_marks: number;
-  source: string;
-  source_year: number | null;
-  status: "draft" | "published" | "archived";
-};
 const defaultExam = (name: string, code: string): Exam => ({
   id: "",
   name,
@@ -93,7 +35,8 @@ const defaultExam = (name: string, code: string): Exam => ({
     },
   ],
 });
-const emptyForm = () => ({
+
+const emptyForm = (): QuestionForm => ({
   sectionId: "",
   topicName: "",
   difficulty: "medium",
@@ -111,6 +54,7 @@ const emptyForm = () => ({
   sourceYear: "",
   status: "draft",
 });
+
 async function api(path: string, init?: RequestInit) {
   const response = await fetch(`/api${path}`, {
     credentials: "include",
@@ -127,11 +71,16 @@ async function api(path: string, init?: RequestInit) {
   if (!response.ok) throw new Error(data.error ?? "Request failed.");
   return data;
 }
+
 function csvBase64(buffer: ArrayBuffer) {
   let binary = "";
   for (const byte of new Uint8Array(buffer))
     binary += String.fromCharCode(byte);
   return btoa(binary);
+}
+
+function SettingsIcon() {
+  return <span aria-hidden="true">⚙</span>;
 }
 
 export default function AdminPanel({
@@ -152,7 +101,7 @@ export default function AdminPanel({
   const [error, setError] = useState("");
   const [newName, setNewName] = useState("");
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState(emptyForm());
+  const [form, setForm] = useState<QuestionForm>(emptyForm());
   const [editId, setEditId] = useState("");
   const [preview, setPreview] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -167,21 +116,26 @@ export default function AdminPanel({
   });
   const [showNewPassage, setShowNewPassage] = useState(false);
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+
   const exam = exams[examIndex];
   const stage = exam?.stages[stageIndex];
+
   const visibleQuestions = questions.filter((q) =>
     `${q.exam_name} ${q.section_name} ${q.topic_name} ${q.question_text}`
       .toLowerCase()
       .includes(filter.toLowerCase()),
   );
+
   async function loadExams() {
     const result = await api("/exams");
     setExams(result.exams);
   }
+
   async function loadQuestions() {
     const result = await api("/admin/questions");
     setQuestions(result.questions);
   }
+
   useEffect(() => {
     setBusy(true);
     Promise.all([
@@ -191,10 +145,12 @@ export default function AdminPanel({
       .catch((e) => setError(e.message))
       .finally(() => setBusy(false));
   }, [section]);
+
   useEffect(() => {
     if (stage?.sections?.[0]?.id && !form.sectionId)
       setForm((v) => ({ ...v, sectionId: stage.sections[0].id }));
   }, [stage]);
+
   useEffect(() => {
     if (form.questionType !== "passage" || !form.sectionId) {
       setPassageGroups([]);
@@ -212,6 +168,7 @@ export default function AdminPanel({
       active = false;
     };
   }, [form.questionType, form.sectionId]);
+
   function updateExam(mutator: (current: Exam) => Exam) {
     setExams((current) =>
       current.map((item, index) =>
@@ -219,6 +176,7 @@ export default function AdminPanel({
       ),
     );
   }
+
   function setStage(field: keyof Stage, value: string) {
     if (!exam) return;
     updateExam((current) => ({
@@ -230,6 +188,7 @@ export default function AdminPanel({
       ),
     }));
   }
+
   function setSection(i: number, field: keyof Section, value: string) {
     updateExam((current) => ({
       ...current,
@@ -250,6 +209,7 @@ export default function AdminPanel({
       ),
     }));
   }
+
   async function createExam() {
     if (!newName.trim()) return;
     const code = newName
@@ -299,6 +259,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   async function savePattern() {
     if (!exam) return;
     setBusy(true);
@@ -341,6 +302,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   function addSection() {
     if (!exam) return;
     updateExam((e) => ({
@@ -366,6 +328,7 @@ export default function AdminPanel({
       ),
     }));
   }
+
   function addStage() {
     if (!exam) return;
     updateExam((e) => ({
@@ -392,6 +355,7 @@ export default function AdminPanel({
     }));
     setStageIndex(exam.stages.length);
   }
+
   async function createPassageGroup() {
     if (
       !form.sectionId ||
@@ -429,6 +393,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   async function saveQuestion(status: "draft" | "published") {
     if (!form.sectionId) {
       setError("Choose an exam section first.");
@@ -480,6 +445,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   function editQuestion(q: Question) {
     setEditId(q.id);
     setForm({
@@ -500,16 +466,18 @@ export default function AdminPanel({
       negativeMarks: String(q.negative_marks),
       source: q.source ?? "",
       sourceYear: q.source_year ? String(q.source_year) : "",
-      status: q.status,
+      status: q.status as "draft" | "published",
     });
     setPreview(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
   async function duplicateQuestion(q: Question) {
     editQuestion({ ...q, id: "", status: "draft" });
     setEditId("");
     onToast("Question copied into the editor. Save it to create a duplicate.");
   }
+
   async function bulkQuestionStatus(
     status: "draft" | "published" | "archived",
   ) {
@@ -535,6 +503,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   async function removeQuestion(id: string) {
     if (
       !confirm(
@@ -550,6 +519,7 @@ export default function AdminPanel({
       setError((e as Error).message);
     }
   }
+
   async function previewUpload() {
     if (!uploadFile) return;
     setBusy(true);
@@ -577,6 +547,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   async function confirmUpload() {
     if (!uploadPreview) return;
     setBusy(true);
@@ -595,6 +566,7 @@ export default function AdminPanel({
       setBusy(false);
     }
   }
+
   return (
     <div className="admin-workspace">
       <div className="admin-heading">
@@ -625,953 +597,80 @@ export default function AdminPanel({
           Question bank <span>{questions.length}</span>
         </button>
       </div>
+
       {error && (
         <div className="admin-error" role="alert">
           {error}
           <button onClick={() => setError("")}>Dismiss</button>
         </div>
       )}
+
       {busy && <div className="admin-loading">Working with the database…</div>}
+
       {section === "Exam setup" ? (
-        <>
-          <section className="panel admin-panel">
-            <div className="admin-panel-heading">
-              <div>
-                <span className="section-kicker">DATABASE EXAM CATALOGUE</span>
-                <h2>Examinations and stages</h2>
-              </div>
-              <button
-                className="outline-btn admin-action"
-                onClick={() => setShowNew((v) => !v)}
-              >
-                <CirclePlus size={15} /> Add examination
-              </button>
-            </div>
-            {showNew && (
-              <div className="inline-add">
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="New examination name"
-                />
-                <button
-                  className="primary-btn"
-                  disabled={busy}
-                  onClick={createExam}
-                >
-                  Create
-                </button>
-              </div>
-            )}
-            {exams.length > 0 && (
-              <>
-                <div className="config-selectors">
-                  <label>
-                    Examination
-                    <select
-                      value={examIndex}
-                      onChange={(e) => {
-                        setExamIndex(Number(e.target.value));
-                        setStageIndex(0);
-                      }}
-                    >
-                      {exams.map((e, i) => (
-                        <option value={i} key={e.id}>
-                          {e.name} · {e.status}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Stage
-                    <select
-                      value={stageIndex}
-                      onChange={(e) => setStageIndex(Number(e.target.value))}
-                    >
-                      {exam?.stages.map((s, i) => (
-                        <option value={i} key={s.id ?? i}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {exam && stage && (
-                  <>
-                    <div className="config-fields">
-                      <Field
-                        label="Stage name"
-                        value={stage.name}
-                        onChange={(v) => setStage("name", v)}
-                      />
-                      <Field
-                        label="Duration (seconds)"
-                        type="number"
-                        value={String(stage.duration_seconds)}
-                        onChange={(v) => setStage("duration_seconds", v)}
-                      />
-                      <Field label="Exam code" value={exam.code} readOnly />
-                    </div>
-                    <div className="config-fields">
-                      <Field
-                        label="Pattern cycle (for example, CRP PO/MT-XV)"
-                        value={exam.pattern_cycle ?? ""}
-                        onChange={(v) =>
-                          updateExam((current) => ({
-                            ...current,
-                            pattern_cycle: v || null,
-                          }))
-                        }
-                      />
-                      <Field
-                        label="Official notification URL (HTTPS)"
-                        value={exam.pattern_source_url ?? ""}
-                        onChange={(v) =>
-                          updateExam((current) => ({
-                            ...current,
-                            pattern_source_url: v || null,
-                          }))
-                        }
-                      />
-                    </div>
-                    {exam.pattern_verified_at && (
-                      <p className="pattern-verified-note">
-                        Published pattern source recorded{" "}
-                        {new Date(
-                          exam.pattern_verified_at,
-                        ).toLocaleDateString()}
-                        .
-                      </p>
-                    )}
-                    <div className="exam-status-row">
-                      <label>
-                        Publication status
-                        <select
-                          value={exam.status}
-                          onChange={(e) =>
-                            updateExam((current) => ({
-                              ...current,
-                              status: e.target.value as Exam["status"],
-                            }))
-                          }
-                        >
-                          <option value="draft">Draft</option>
-                          <option value="published">Published</option>
-                          <option value="archived">Archived</option>
-                        </select>
-                      </label>
-                      <span>
-                        Only published exams appear in the student catalog.
-                      </span>
-                    </div>
-                    <div className="section-table-wrap">
-                      <table className="section-table">
-                        <thead>
-                          <tr>
-                            <th>Section</th>
-                            <th>Questions</th>
-                            <th>Section time (sec)</th>
-                            <th>Marks / correct</th>
-                            <th>Penalty</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {stage.sections.map((s, i) => (
-                            <tr key={s.id || i}>
-                              <td>
-                                <input
-                                  value={s.name}
-                                  onChange={(e) =>
-                                    setSection(i, "name", e.target.value)
-                                  }
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={s.question_count}
-                                  onChange={(e) =>
-                                    setSection(
-                                      i,
-                                      "question_count",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={s.duration_seconds ?? ""}
-                                  onChange={(e) =>
-                                    setSection(
-                                      i,
-                                      "duration_seconds",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  step=".01"
-                                  min="0"
-                                  value={s.marks_per_correct}
-                                  onChange={(e) =>
-                                    setSection(
-                                      i,
-                                      "marks_per_correct",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  type="number"
-                                  step=".01"
-                                  min="0"
-                                  value={s.negative_marks}
-                                  onChange={(e) =>
-                                    setSection(
-                                      i,
-                                      "negative_marks",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="admin-footer">
-                      <span>
-                        These are editable pattern values; check the official
-                        notice before publishing.
-                      </span>
-                      <div>
-                        <button
-                          className="outline-btn admin-action"
-                          onClick={addSection}
-                        >
-                          <Plus size={14} /> Add section
-                        </button>
-                        <button
-                          className="outline-btn admin-action"
-                          onClick={addStage}
-                        >
-                          <Plus size={14} /> Add stage
-                        </button>
-                        <button
-                          className="primary-btn"
-                          disabled={busy}
-                          onClick={savePattern}
-                        >
-                          <Save size={15} /> Save pattern
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-            {!exams.length && !busy && (
-              <div className="empty-questions">
-                No exam configurations found.
-              </div>
-            )}
-          </section>
-          <div className="admin-note">
-            <Check size={16} />
-            <span>
-              <strong>Next step:</strong> choose Question bank and create
-              content linked to a saved section.
-            </span>
-          </div>
-        </>
+        <ExamSetupView
+          exams={exams}
+          examIndex={examIndex}
+          stageIndex={stageIndex}
+          showNew={showNew}
+          newName={newName}
+          busy={busy}
+          onSetShowNew={setShowNew}
+          onSetNewName={setNewName}
+          onSetExamIndex={setExamIndex}
+          onSetStageIndex={setStageIndex}
+          onCreateExam={createExam}
+          onSavePattern={savePattern}
+          onAddSection={addSection}
+          onAddStage={addStage}
+          onUpdateExam={updateExam}
+          onSetStage={setStage}
+          onSetSection={setSection}
+        />
       ) : (
-        <>
-          <section className="panel admin-panel import-panel">
-            <div className="admin-panel-heading">
-              <div>
-                <span className="section-kicker">BULK QUESTION UPLOAD</span>
-                <h2>
-                  <FileSpreadsheet size={17} /> CSV or Excel import
-                </h2>
-              </div>
-              <a
-                className="outline-btn admin-action"
-                href="/api/admin/questions/import/template.csv"
-              >
-                Download template
-              </a>
-            </div>
-            <div className="import-controls">
-              <input
-                type="file"
-                accept=".csv,.xlsx"
-                onChange={(e) => {
-                  setUploadFile(e.target.files?.[0] ?? null);
-                  setUploadPreview(null);
-                }}
-              />
-              <button
-                className="outline-btn admin-action"
-                disabled={!uploadFile || busy}
-                onClick={previewUpload}
-              >
-                Validate upload
-              </button>
-            </div>
-            {uploadPreview && (
-              <div className="upload-results">
-                <div>
-                  <b>{uploadPreview.total}</b>
-                  <span>Total</span>
-                </div>
-                <div>
-                  <b>{uploadPreview.successful}</b>
-                  <span>Valid</span>
-                </div>
-                <div>
-                  <b>{uploadPreview.failed}</b>
-                  <span>Failed</span>
-                </div>
-                <div>
-                  <b>{uploadPreview.duplicate}</b>
-                  <span>Duplicates</span>
-                </div>
-                <button
-                  className="primary-btn"
-                  disabled={!confirmRows.length || busy}
-                  onClick={confirmUpload}
-                >
-                  Import {confirmRows.length} valid rows as drafts
-                </button>
-                {uploadPreview.errors.length > 0 && (
-                  <>
-                    <a
-                      className="outline-btn admin-action"
-                      href={`/api/admin/questions/import/${uploadPreview.batchId}/errors.csv`}
-                    >
-                      Download row error report
-                    </a>
-                    <details>
-                      <summary>Row errors</summary>
-                      {uploadPreview.errors.map((x: any) => (
-                        <p key={x.rowNumber}>
-                          Row {x.rowNumber}: {x.errors.join("; ")}
-                        </p>
-                      ))}
-                    </details>
-                  </>
-                )}
-              </div>
-            )}
-          </section>
-          <div className="question-bank-layout">
-            <section className="panel admin-panel question-editor">
-              <div className="admin-panel-heading">
-                <div>
-                  <span className="section-kicker">CONTENT AUTHORING</span>
-                  <h2>
-                    <FileQuestion size={18} />{" "}
-                    {editId ? "Edit question" : "Add a question"}
-                  </h2>
-                </div>
-              </div>
-              <div className="question-config">
-                <label>
-                  Exam
-                  <select
-                    value={examIndex}
-                    onChange={(e) => {
-                      setExamIndex(Number(e.target.value));
-                      setStageIndex(0);
-                      setForm((v) => ({
-                        ...v,
-                        sectionId: "",
-                        passageGroupId: "",
-                      }));
-                    }}
-                  >
-                    {exams.map((e, i) => (
-                      <option value={i} key={e.id}>
-                        {e.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Stage
-                  <select
-                    value={stageIndex}
-                    onChange={(e) => {
-                      setStageIndex(Number(e.target.value));
-                      setForm((v) => ({
-                        ...v,
-                        sectionId: "",
-                        passageGroupId: "",
-                      }));
-                    }}
-                  >
-                    {exam?.stages.map((s, i) => (
-                      <option value={i} key={s.id ?? i}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Section
-                  <select
-                    value={form.sectionId}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        sectionId: e.target.value,
-                        passageGroupId: "",
-                      })
-                    }
-                  >
-                    <option value="">Choose section</option>
-                    {stage?.sections.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Field
-                  label="Topic"
-                  value={form.topicName}
-                  placeholder="e.g. Syllogism"
-                  onChange={(v) => setForm({ ...form, topicName: v })}
-                />
-                <label>
-                  Difficulty
-                  <select
-                    value={form.difficulty}
-                    onChange={(e) =>
-                      setForm({ ...form, difficulty: e.target.value })
-                    }
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </label>
-                <label>
-                  Question type
-                  <select
-                    value={form.questionType}
-                    onChange={(e) => {
-                      const questionType = e.target.value;
-                      setForm({
-                        ...form,
-                        questionType,
-                        options:
-                          questionType === "descriptive"
-                            ? []
-                            : form.options.length
-                              ? form.options
-                              : ["", "", "", ""],
-                        correctAnswer:
-                          questionType === "descriptive"
-                            ? ""
-                            : form.correctAnswer || "A",
-                      });
-                    }}
-                  >
-                    <option value="mcq">Multiple choice</option>
-                    <option value="passage">Passage group</option>
-                    <option value="image">Image based</option>
-                    <option value="numeric">Numeric multiple choice</option>
-                    <option value="descriptive">Descriptive response</option>
-                  </select>
-                </label>
-                <label>
-                  Language
-                  <select
-                    value={form.language}
-                    onChange={(e) =>
-                      setForm({ ...form, language: e.target.value })
-                    }
-                  >
-                    <option>English</option>
-                    <option>Hindi</option>
-                  </select>
-                </label>
-                <Field
-                  label="Source year (optional)"
-                  type="number"
-                  value={form.sourceYear}
-                  onChange={(v) => setForm({ ...form, sourceYear: v })}
-                />
-                <Field
-                  label="Source (optional)"
-                  value={form.source}
-                  onChange={(v) => setForm({ ...form, source: v })}
-                />
-              </div>
-              {form.questionType === "passage" && (
-                <div className="passage-group-editor">
-                  <label className="form-field">
-                    Passage group
-                    <select
-                      value={form.passageGroupId}
-                      onChange={(e) =>
-                        setForm((v) => ({
-                          ...v,
-                          passageGroupId: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Choose a passage group</option>
-                      {passageGroups.map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.title} · {group.language}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {passageGroups.find(
-                    (group) => group.id === form.passageGroupId,
-                  ) && (
-                    <article className="passage-excerpt">
-                      <strong>
-                        {
-                          passageGroups.find(
-                            (group) => group.id === form.passageGroupId,
-                          ).title
-                        }
-                      </strong>
-                      <p>
-                        {
-                          passageGroups.find(
-                            (group) => group.id === form.passageGroupId,
-                          ).passage_text
-                        }
-                      </p>
-                      {passageGroups.find(
-                        (group) => group.id === form.passageGroupId,
-                      ).image_url && (
-                        <img
-                          src={
-                            passageGroups.find(
-                              (group) => group.id === form.passageGroupId,
-                            ).image_url
-                          }
-                          alt="Passage illustration"
-                        />
-                      )}
-                    </article>
-                  )}
-                  <button
-                    type="button"
-                    className="outline-btn admin-action"
-                    onClick={() => setShowNewPassage((value) => !value)}
-                  >
-                    {showNewPassage
-                      ? "Cancel new passage"
-                      : "Create passage group"}
-                  </button>
-                  {showNewPassage && (
-                    <div className="passage-create-form">
-                      <Field
-                        label="Passage title"
-                        value={newPassage.title}
-                        onChange={(v) =>
-                          setNewPassage((old) => ({ ...old, title: v }))
-                        }
-                      />
-                      <Field
-                        label="Language"
-                        value={newPassage.language}
-                        onChange={(v) =>
-                          setNewPassage((old) => ({ ...old, language: v }))
-                        }
-                      />
-                      <Field
-                        label="Passage image URL (optional, HTTPS)"
-                        value={newPassage.imageUrl}
-                        placeholder="https://..."
-                        onChange={(v) =>
-                          setNewPassage((old) => ({ ...old, imageUrl: v }))
-                        }
-                      />
-                      <label className="form-field">
-                        Shared passage text
-                        <textarea
-                          rows={6}
-                          value={newPassage.text}
-                          onChange={(e) =>
-                            setNewPassage((old) => ({
-                              ...old,
-                              text: e.target.value,
-                            }))
-                          }
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        className="primary-btn"
-                        disabled={busy}
-                        onClick={createPassageGroup}
-                      >
-                        Save passage group
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              {form.questionType === "image" && (
-                <Field
-                  label="Image URL (HTTPS)"
-                  value={form.imageUrl}
-                  placeholder="https://..."
-                  onChange={(v) => setForm({ ...form, imageUrl: v })}
-                />
-              )}
-              <label className="form-field">
-                Question text
-                <textarea
-                  rows={4}
-                  value={form.questionText}
-                  onChange={(e) =>
-                    setForm({ ...form, questionText: e.target.value })
-                  }
-                  placeholder="Enter the question text."
-                />
-              </label>
-              {form.questionType !== "descriptive" && (
-                <div className="option-editor">
-                  <div className="form-label">
-                    Options — select the letter for the correct answer
-                  </div>
-                  {form.options.map((option, i) => {
-                    const key = String.fromCharCode(65 + i);
-                    return (
-                      <div
-                        className={`option-input ${form.correctAnswer === key ? "correct-option" : ""}`}
-                        key={key}
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm({ ...form, correctAnswer: key })
-                          }
-                        >
-                          {key}
-                        </button>
-                        <input
-                          value={option}
-                          onChange={(e) =>
-                            setForm({
-                              ...form,
-                              options: form.options.map((v, index) =>
-                                index === i ? e.target.value : v,
-                              ),
-                            })
-                          }
-                          placeholder={`Option ${key}`}
-                        />
-                        {form.correctAnswer === key && <Check size={15} />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <label className="form-field">
-                {form.questionType === "descriptive"
-                  ? "Grading rubric / evaluation guidance"
-                  : "Answer explanation"}
-                <textarea
-                  rows={3}
-                  value={form.explanation}
-                  onChange={(e) =>
-                    setForm({ ...form, explanation: e.target.value })
-                  }
-                  placeholder="Explain the solution for aspirants."
-                />
-              </label>
-              <div className="config-fields scoring-fields">
-                <Field
-                  label="Marks"
-                  type="number"
-                  value={form.marks}
-                  onChange={(v) => setForm({ ...form, marks: v })}
-                />
-                <Field
-                  label="Negative marks"
-                  type="number"
-                  value={form.negativeMarks}
-                  onChange={(v) => setForm({ ...form, negativeMarks: v })}
-                />
-              </div>
-              <div className="question-preview-control">
-                <button
-                  className="outline-btn admin-action"
-                  onClick={() => setPreview((v) => !v)}
-                >
-                  Preview question
-                </button>
-                {preview && (
-                  <div className="question-preview">
-                    <span>
-                      {exam?.name} · {stage?.name} · {form.topicName || "Topic"}{" "}
-                      · {form.difficulty}
-                    </span>
-                    {form.questionType === "passage" &&
-                      passageGroups.find(
-                        (group) => group.id === form.passageGroupId,
-                      ) && (
-                        <div className="preview-passage">
-                          <strong>
-                            {
-                              passageGroups.find(
-                                (group) => group.id === form.passageGroupId,
-                              ).title
-                            }
-                          </strong>
-                          <p>
-                            {
-                              passageGroups.find(
-                                (group) => group.id === form.passageGroupId,
-                              ).passage_text
-                            }
-                          </p>
-                        </div>
-                      )}
-                    <p>
-                      {form.questionText ||
-                        "Question preview will appear here."}
-                    </p>
-                    {form.imageUrl && (
-                      <img
-                        src={form.imageUrl}
-                        alt="Question illustration preview"
-                      />
-                    )}
-                    {form.questionType === "descriptive" ? (
-                      <div>
-                        Descriptive written response · evaluated using the
-                        rubric
-                      </div>
-                    ) : (
-                      <>
-                        {form.options.map((o, i) => (
-                          <div key={i}>
-                            {String.fromCharCode(65 + i)}. {o || "Option text"}
-                          </div>
-                        ))}
-                        <strong>Answer: {form.correctAnswer}</strong>
-                      </>
-                    )}
-                    <p>{form.explanation}</p>
-                  </div>
-                )}
-              </div>
-              <div className="admin-footer question-submit">
-                <span>
-                  Questions are stored on the server; drafts are excluded from
-                  student tests.
-                </span>
-                <div>
-                  <button
-                    className="outline-btn admin-action"
-                    disabled={busy}
-                    onClick={() => saveQuestion("draft")}
-                  >
-                    Save draft
-                  </button>
-                  <button
-                    className="primary-btn"
-                    disabled={busy}
-                    onClick={() => saveQuestion("published")}
-                  >
-                    <Check size={15} /> Publish question
-                  </button>
-                </div>
-              </div>
-            </section>
-            <section className="panel admin-panel saved-questions">
-              <div className="admin-panel-heading">
-                <div>
-                  <span className="section-kicker">QUESTION BANK</span>
-                  <h2>
-                    Saved questions{" "}
-                    <span className="question-count">{questions.length}</span>
-                  </h2>
-                </div>
-                <label className="question-search">
-                  <Search size={15} />
-                  <input
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    placeholder="Search questions"
-                  />
-                </label>
-              </div>
-              {selectedQuestionIds.length > 0 && (
-                <div className="bulk-question-actions">
-                  <strong>{selectedQuestionIds.length} selected</strong>
-                  <button
-                    className="outline-btn admin-action"
-                    disabled={busy}
-                    onClick={() => void bulkQuestionStatus("draft")}
-                  >
-                    Return to drafts
-                  </button>
-                  <button
-                    className="primary-btn"
-                    disabled={busy}
-                    onClick={() => void bulkQuestionStatus("published")}
-                  >
-                    Publish selected
-                  </button>
-                  <button
-                    className="outline-btn admin-action"
-                    disabled={busy}
-                    onClick={() => void bulkQuestionStatus("archived")}
-                  >
-                    Archive selected
-                  </button>
-                  <button
-                    className="text-link"
-                    onClick={() => setSelectedQuestionIds([])}
-                  >
-                    Clear selection
-                  </button>
-                </div>
-              )}
-              {visibleQuestions.length ? (
-                <div className="saved-question-list">
-                  {visibleQuestions.map((q) => (
-                    <article className="saved-question" key={q.id}>
-                      <div className="saved-question-meta">
-                        <label className="question-select">
-                          <input
-                            type="checkbox"
-                            checked={selectedQuestionIds.includes(q.id)}
-                            onChange={(e) =>
-                              setSelectedQuestionIds((old) =>
-                                e.target.checked
-                                  ? [...old, q.id]
-                                  : old.filter((id) => id !== q.id),
-                              )
-                            }
-                          />
-                          <span>Select</span>
-                        </label>
-                        <span>{q.exam_name}</span>
-                        <span>
-                          {q.stage_name} · {q.section_name}
-                        </span>
-                        <span>{q.topic_name}</span>
-                        {q.passage_title && <span>{q.passage_title}</span>}
-                        <b
-                          className={
-                            q.status === "published" ? "published" : ""
-                          }
-                        >
-                          {q.status}
-                        </b>
-                      </div>
-                      <p>{q.question_text}</p>
-                      {q.image_url && (
-                        <img
-                          className="saved-question-image"
-                          src={q.image_url}
-                          alt="Question illustration"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="saved-question-bottom">
-                        <span>
-                          {q.difficulty} · {q.marks} marks · −{q.negative_marks}{" "}
-                          · {q.language}
-                        </span>
-                        <div>
-                          <button
-                            className="icon-btn"
-                            aria-label="Edit question"
-                            onClick={() => editQuestion(q)}
-                          >
-                            <Save size={14} />
-                          </button>
-                          <button
-                            className="icon-btn"
-                            aria-label="Duplicate question"
-                            onClick={() => duplicateQuestion(q)}
-                          >
-                            <Copy size={14} />
-                          </button>
-                          <button
-                            className="icon-btn"
-                            aria-label="Archive question"
-                            onClick={() => removeQuestion(q.id)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-questions">
-                  <div>
-                    <FileQuestion size={22} />
-                  </div>
-                  <strong>No questions yet</strong>
-                  <span>Enter a question or validate a CSV/XLSX import.</span>
-                </div>
-              )}
-            </section>
-          </div>
-        </>
+        <QuestionBankView
+          exams={exams}
+          examIndex={examIndex}
+          stageIndex={stageIndex}
+          questions={questions}
+          visibleQuestions={visibleQuestions}
+          filter={filter}
+          form={form}
+          editId={editId}
+          preview={preview}
+          uploadFile={uploadFile}
+          uploadPreview={uploadPreview}
+          confirmRows={confirmRows}
+          passageGroups={passageGroups}
+          newPassage={newPassage}
+          showNewPassage={showNewPassage}
+          selectedQuestionIds={selectedQuestionIds}
+          busy={busy}
+          onSetExamIndex={setExamIndex}
+          onSetStageIndex={setStageIndex}
+          onSetFilter={setFilter}
+          onSetForm={setForm}
+          onSetPreview={setPreview}
+          onSetUploadFile={setUploadFile}
+          onSetUploadPreview={setUploadPreview}
+          onSetNewPassage={setNewPassage}
+          onSetShowNewPassage={setShowNewPassage}
+          onSetSelectedQuestionIds={setSelectedQuestionIds}
+          onPreviewUpload={previewUpload}
+          onConfirmUpload={confirmUpload}
+          onCreatePassageGroup={createPassageGroup}
+          onSaveQuestion={saveQuestion}
+          onEditQuestion={editQuestion}
+          onDuplicateQuestion={duplicateQuestion}
+          onBulkQuestionStatus={bulkQuestionStatus}
+          onRemoveQuestion={removeQuestion}
+        />
       )}
+
       <p className="admin-disclaimer">
         Admin access is enforced by the API. The local build uses PostgreSQL;
         only explicitly published content can appear in student workflows.
       </p>
     </div>
   );
-}
-function Field({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-  readOnly = false,
-}: {
-  label: string;
-  value: string;
-  onChange?: (v: string) => void;
-  type?: string;
-  placeholder?: string;
-  readOnly?: boolean;
-}) {
-  return (
-    <label className="form-field">
-      {label}
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        onChange={(e) => onChange?.(e.target.value)}
-      />
-    </label>
-  );
-}
-function SettingsIcon() {
-  return <span aria-hidden="true">⚙</span>;
 }

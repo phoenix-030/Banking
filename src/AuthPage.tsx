@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { AuthBrand } from "./components/auth/AuthBrand";
+import { LoginForm } from "./components/auth/LoginForm";
+import { RegisterForm } from "./components/auth/RegisterForm";
+import { ForgotPasswordForm } from "./components/auth/ForgotPasswordForm";
+import { ResetPasswordForm } from "./components/auth/ResetPasswordForm";
 
-type User = {
+export type User = {
   id: string;
   email: string;
   fullName: string;
   mobile: string;
   role: "student" | "admin";
 };
+
 type Mode = "login" | "register" | "forgot" | "reset";
+
 export default function AuthPage({
   onAuthenticated,
 }: {
@@ -20,57 +26,29 @@ export default function AuthPage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    mobile: "",
-    password: "",
-    passwordConfirmation: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+
+  function clearAlerts() {
     setError("");
     setNotice("");
+  }
+
+  async function handleLogin(credentials: { email: string; password: string }) {
+    clearAlerts();
     setBusy(true);
     try {
-      if (mode === "forgot") {
-        const r = await fetch("/api/auth/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: form.email }),
-        });
-        const d = await r.json().catch(() => null);
-        if (!r.ok) throw new Error(d?.error ?? "Could not request reset. Make sure the backend server is running.");
-        setNotice(d.message);
-        return;
-      }
-      if (mode === "reset") {
-        const r = await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token: resetToken,
-            password: form.password,
-            passwordConfirmation: form.passwordConfirmation,
-          }),
-        });
-        const d = await r.json().catch(() => null);
-        if (!r.ok) throw new Error(d?.error ?? "Could not reset the password. Make sure the backend server is running.");
-        setNotice(d.message);
-        window.history.replaceState({}, "", window.location.pathname);
-        setMode("login");
-        return;
-      }
-      const response = await fetch(`/api/auth/${mode}`, {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify(credentials),
       });
       const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error ?? "Unable to reach the server. Please ensure the backend is running on port 3001.");
+      if (!response.ok) {
+        throw new Error(
+          body?.error ??
+            "Unable to reach the server. Please ensure the backend is running on port 3001.",
+        );
+      }
       onAuthenticated(body.user);
     } catch (err) {
       setError(
@@ -82,224 +60,164 @@ export default function AuthPage({
       setBusy(false);
     }
   }
-  const register = mode === "register";
-  const reset = mode === "reset";
-  const forgot = mode === "forgot";
+
+  async function handleRegister(data: {
+    fullName: string;
+    mobile: string;
+    email: string;
+    password: string;
+    passwordConfirmation: string;
+  }) {
+    clearAlerts();
+    setBusy(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          body?.error ??
+            "Unable to reach the server. Please ensure the backend is running on port 3001.",
+        );
+      }
+      onAuthenticated(body.user);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "API unavailable. Start the HHK API server and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleForgotPassword(email: string) {
+    clearAlerts();
+    setBusy(true);
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          body?.error ??
+            "Could not request reset. Make sure the backend server is running.",
+        );
+      }
+      setNotice(body.message);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "API unavailable. Start the HHK API server and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResetPassword(passwords: {
+    password: string;
+    passwordConfirmation: string;
+  }) {
+    clearAlerts();
+    setBusy(true);
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: resetToken,
+          password: passwords.password,
+          passwordConfirmation: passwords.passwordConfirmation,
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          body?.error ??
+            "Could not reset the password. Make sure the backend server is running.",
+        );
+      }
+      setNotice(body.message);
+      window.history.replaceState({}, "", window.location.pathname);
+      setMode("login");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "API unavailable. Start the HHK API server and try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="auth-shell">
-      <section className="auth-brand">
-        <img src="/hhk-logo.png" alt="HHK logo" />
-        <strong>HHK</strong>
-        <span>Banking exam preparation</span>
-        <div>
-          <h1>Prepare with purpose.</h1>
-          <p>
-            Build your confidence with structured practice and a realistic
-            computer-based test experience.
-          </p>
-        </div>
-        <small>LEARN · PRACTICE · IMPROVE</small>
-      </section>
+      <AuthBrand />
       <section className="auth-side">
-            <form className="auth-card" onSubmit={submit}>
-              <span className="auth-overline">WELCOME TO HHK</span>
-              <h2>
-                {register
-                  ? "Create your student account"
-                  : reset
-                    ? "Choose a new password"
-                    : forgot
-                      ? "Reset your password"
-                      : "Sign in to your account"}
-              </h2>
-              <p>
-                {register
-                  ? "Start building a focused preparation routine."
-                  : reset
-                    ? "Choose a strong password you have not used here before."
-                    : forgot
-                      ? "We will send reset instructions if an account matches."
-                      : "Continue your banking exam preparation."}
-              </p>
-              {error && (
-                <div className="auth-error" role="alert">
-                  {error}
-                </div>
-              )}
-              {notice && (
-                <div className="auth-notice" role="status">
-                  {notice}
-                </div>
-              )}
-              {register && (
-                <>
-                  <label>
-                    Full name
-                    <input
-                      autoComplete="name"
-                      required
-                      minLength={2}
-                      maxLength={100}
-                      value={form.fullName}
-                      onChange={(e) =>
-                        setForm({ ...form, fullName: e.target.value })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Mobile number
-                    <input
-                      autoComplete="tel"
-                      required
-                      value={form.mobile}
-                      onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-                    />
-                  </label>
-                </>
-              )}
-              {!reset && !forgot && (
-                <label>
-                  Email address
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </label>
-              )}
-              {!forgot && (
-                <label>
-                  Password
-                  <div className="auth-password-wrapper">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete={
-                        register || reset ? "new-password" : "current-password"
-                      }
-                      required
-                      minLength={register || reset ? 6 : 1}
-                      maxLength={128}
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="auth-password-toggle"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  {(register || reset) && (
-                    <small>Use at least 6 characters.</small>
-                  )}
-                </label>
-              )}
-              {(register || reset) && (
-                <label>
-                  Confirm password
-                  <div className="auth-password-wrapper">
-                    <input
-                      type={showPasswordConfirmation ? "text" : "password"}
-                      autoComplete="new-password"
-                      required
-                      minLength={6}
-                      maxLength={128}
-                      value={form.passwordConfirmation}
-                      onChange={(e) =>
-                        setForm({ ...form, passwordConfirmation: e.target.value })
-                      }
-                    />
-                    <button
-                      type="button"
-                      className="auth-password-toggle"
-                      onClick={() => setShowPasswordConfirmation((prev) => !prev)}
-                      aria-label={
-                        showPasswordConfirmation
-                          ? "Hide confirm password"
-                          : "Show confirm password"
-                      }
-                    >
-                      {showPasswordConfirmation ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </label>
-              )}
-              {mode === "login" && (
-                <button
-                  className="auth-forgot"
-                  type="button"
-                  onClick={() => {
-                    setError("");
-                    setNotice("");
-                    setMode("forgot");
-                  }}
-                >
-                  Forgot password?
-                </button>
-              )}
-              <button className="primary-btn auth-submit" disabled={busy}>
-                {busy
-                  ? "Please wait…"
-                  : register
-                    ? "Create account"
-                    : reset
-                      ? "Set new password"
-                      : forgot
-                        ? "Send reset instructions"
-                        : "Sign in"}
-              </button>
-              <div className="auth-switch">
-                {register ? (
-                  <>
-                    Already have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError("");
-                        setMode("login");
-                      }}
-                    >
-                      Sign in
-                    </button>
-                  </>
-                ) : forgot || reset ? (
-                  <>
-                    Remembered your password?{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError("");
-                        setNotice("");
-                        setMode("login");
-                      }}
-                    >
-                      Sign in
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    New to HHK?{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setError("");
-                        setMode("register");
-                      }}
-                    >
-                      Create an account
-                    </button>
-                  </>
-                )}
-              </div>
-              <small className="auth-note">
-                Your profile, attempts, and results are private to your account.
-              </small>
-            </form>
-          </section>
-        </main>
-      );
-    }
+        {mode === "login" && (
+          <LoginForm
+            busy={busy}
+            error={error}
+            notice={notice}
+            onSubmit={handleLogin}
+            onNavigateRegister={() => {
+              clearAlerts();
+              setMode("register");
+            }}
+            onNavigateForgot={() => {
+              clearAlerts();
+              setMode("forgot");
+            }}
+          />
+        )}
+        {mode === "register" && (
+          <RegisterForm
+            busy={busy}
+            error={error}
+            notice={notice}
+            onSubmit={handleRegister}
+            onNavigateLogin={() => {
+              clearAlerts();
+              setMode("login");
+            }}
+          />
+        )}
+        {mode === "forgot" && (
+          <ForgotPasswordForm
+            busy={busy}
+            error={error}
+            notice={notice}
+            onSubmit={handleForgotPassword}
+            onNavigateLogin={() => {
+              clearAlerts();
+              setMode("login");
+            }}
+          />
+        )}
+        {mode === "reset" && (
+          <ResetPasswordForm
+            busy={busy}
+            error={error}
+            notice={notice}
+            onSubmit={handleResetPassword}
+            onNavigateLogin={() => {
+              clearAlerts();
+              setMode("login");
+            }}
+          />
+        )}
+      </section>
+    </main>
+  );
+}
