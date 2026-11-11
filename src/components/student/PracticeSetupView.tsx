@@ -34,6 +34,8 @@ export function PracticeSetupView({
   onStartPractice,
   practiceResponses,
 }: PracticeSetupViewProps) {
+  const exams = [...new Map(catalog.map((c) => [c.exam_id, c])).values()];
+
   return (
     <>
       <div className="student-welcome">
@@ -47,92 +49,106 @@ export function PracticeSetupView({
         </div>
       </div>
       <section className="panel admin-panel practice-setup">
-        <div className="question-config">
-          <label>
-            Exam
-            <select
-              value={selectedExam}
-              onChange={(e) => {
-                setSelectedExam(e.target.value);
-                setSectionId("");
-                setTopicName("");
-              }}
+        {!exams.length && !busy ? (
+          <div className="empty-questions">
+            <strong>No published practice exams available yet</strong>
+            <span>
+              Exams only appear here after an administrator publishes both the
+              examination (in Exam setup) and at least one question in its
+              sections (in Question bank).
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="question-config">
+              <label>
+                Exam
+                <select
+                  value={selectedExam}
+                  onChange={(e) => {
+                    setSelectedExam(e.target.value);
+                    setSectionId("");
+                    setTopicName("");
+                  }}
+                >
+                  <option value="">Select exam</option>
+                  {exams.map((c: any) => (
+                    <option key={c.exam_id} value={c.exam_id}>
+                      {c.exam_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Section
+                <select
+                  value={sectionId}
+                  disabled={!selectedExam}
+                  onChange={(e) => {
+                    setSectionId(e.target.value);
+                    setTopicName("");
+                  }}
+                >
+                  <option value="">Select section</option>
+                  {[
+                    ...new Map(
+                      catalog
+                        .filter((c) => c.exam_id === selectedExam)
+                        .map((c) => [c.section_id, c]),
+                    ).values(),
+                  ].map((c: any) => (
+                    <option key={c.section_id} value={c.section_id}>
+                      {c.stage_name} · {c.section_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Topic
+                <select
+                  value={topicName}
+                  disabled={!sectionId}
+                  onChange={(e) => setTopicName(e.target.value)}
+                >
+                  <option value="">Any topic</option>
+                  {catalog
+                    .filter((c) => c.section_id === sectionId && c.topic_name)
+                    .map((c: any) => (
+                      <option key={c.topic_id} value={c.topic_name}>
+                        {c.topic_name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Difficulty
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                >
+                  <option value="">Any difficulty</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </label>
+              <Field
+                label="Question count"
+                value={String(count)}
+                onChange={(v) =>
+                  setCount(Math.max(1, Math.min(100, Number(v))))
+                }
+              />
+            </div>
+            <button
+              className="primary-btn"
+              disabled={!sectionId || busy}
+              onClick={onStartPractice}
             >
-              <option value="">Select exam</option>
-              {[
-                ...new Map(catalog.map((c) => [c.exam_id, c])).values(),
-              ].map((c: any) => (
-                <option key={c.exam_id} value={c.exam_id}>
-                  {c.exam_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Section
-            <select
-              value={sectionId}
-              onChange={(e) => {
-                setSectionId(e.target.value);
-                setTopicName("");
-              }}
-            >
-              <option value="">Select section</option>
-              {[
-                ...new Map(
-                  catalog
-                    .filter((c) => c.exam_id === selectedExam)
-                    .map((c) => [c.section_id, c]),
-                ).values(),
-              ].map((c: any) => (
-                <option key={c.section_id} value={c.section_id}>
-                  {c.stage_name} · {c.section_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Topic
-            <select
-              value={topicName}
-              onChange={(e) => setTopicName(e.target.value)}
-            >
-              <option value="">Any topic</option>
-              {catalog
-                .filter((c) => c.section_id === sectionId && c.topic_name)
-                .map((c: any) => (
-                  <option key={c.topic_id} value={c.topic_name}>
-                    {c.topic_name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Difficulty
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-            >
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </label>
-          <Field
-            label="Question count"
-            value={String(count)}
-            onChange={(v) =>
-              setCount(Math.max(1, Math.min(100, Number(v))))
-            }
-          />
-        </div>
-        <button
-          className="primary-btn"
-          disabled={!sectionId || busy}
-          onClick={onStartPractice}
-        >
-          Start practice <ArrowRight size={14} />
-        </button>
+              Start practice <ArrowRight size={14} />
+            </button>
+          </>
+        )}
         <section className="panel admin-panel">
           <h2>Recent practice responses</h2>
           {practiceResponses.map((r: any) => (

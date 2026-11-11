@@ -238,6 +238,14 @@ export function QuestionBankView({
               </h2>
             </div>
           </div>
+          {exam && exam.status !== "published" && (
+            <div className="admin-notice" role="status">
+              <strong>{exam.name}</strong> is currently in{" "}
+              <strong>{exam.status}</strong> status. Published questions here
+              will not appear to students under Practice or Mock tests until
+              you publish the examination under <strong>Exam setup</strong>.
+            </div>
+          )}
           <div className="question-config">
             <label>
               Exam
@@ -255,7 +263,7 @@ export function QuestionBankView({
               >
                 {exams.map((e, i) => (
                   <option value={i} key={e.id}>
-                    {e.name}
+                    {e.name} · {e.status}
                   </option>
                 ))}
               </select>

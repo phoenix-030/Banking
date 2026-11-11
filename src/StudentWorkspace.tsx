@@ -63,7 +63,7 @@ export default function StudentWorkspace({
   const [selectedExam, setSelectedExam] = useState("");
   const [sectionId, setSectionId] = useState("");
   const [topicName, setTopicName] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("");
   const [count, setCount] = useState(20);
   const [practice, setPractice] = useState<any>(null);
   const [practiceResponses, setPracticeResponses] = useState<any[]>([]);
@@ -377,7 +377,7 @@ export default function StudentWorkspace({
         body: JSON.stringify({
           sectionId,
           topicName: topicName || undefined,
-          difficulty,
+          difficulty: difficulty || undefined,
           count,
         }),
       });
