@@ -7,14 +7,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-protected.mjs",
+    "dev:hmr": "vite",
     "dev:server": "tsx watch server/index.ts",
     "dev:full": "concurrently -k -n API,WEB \"npm:dev:server\" \"npm:dev\"",
     "start:server": "tsx server/index.ts",
     "db:migrate": "tsx server/migrate.ts",
     "db:seed-admin": "tsx server/seed-admin.ts",
     "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
-    "build": "tsc -b && npm run typecheck:server && vite build",
+    "build": "tsc -b && npm run typecheck:server && node scripts/build-web.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import session from 'express-session';
@@ -34,7 +35,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
@@ -121,7 +122,13 @@ app.use('/api', (req, res, next) => {
   }
 });
 
-// 7. Global API Rate Limiter
+// 7. Prevent caching of API responses + Global API Rate Limiter
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
 app.use(
   '/api',
   rateLimit({
@@ -149,12 +156,32 @@ app.use('/api', attemptRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API endpoint not found.' }));
 
-// 10. Production static serving
-if (production) {
-  const distPath = path.join(projectRoot, 'dist');
-  app.use(express.static(distPath, { index: false, maxAge: '1h' }));
+// 10. Block any source/map exposure and serve compiled bundle
+const blockedSourcePattern =
+  /^\/(?:src\/|server\/|scripts\/|\.env|package(?:-lock)?\.json$|tsconfig[^/]*\.json$)|(?:\.map|\.tsx?)$/i;
+app.use((req, res, next) => {
+  if (blockedSourcePattern.test(req.path)) {
+    return res.status(404).type('text/plain').send('Not Found');
+  }
+  next();
+});
+
+const distPath = path.join(projectRoot, 'dist');
+if (production || fs.existsSync(path.join(distPath, 'index.html'))) {
+  app.use(
+    express.static(distPath, {
+      index: false,
+      maxAge: '1h',
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-store');
+        }
+      },
+    })
+  );
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+    res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(distPath, 'index.html'), error => {
       if (error) next(error);
     });
