@@ -38,10 +38,11 @@ export function RuleBasedSelector({
   return (
     <div className="rule-based-selector">
       <div className="rule-selector-heading">
-        <strong>Automatic question rules</strong>
+        <strong>Automatic non-repeating question rules</strong>
         <span>
-          Set an optional topic mix and difficulty percentages for each section.
-          Every active mix must total 100%.
+          Automatically selects non-repeating published questions and shuffles
+          option order dynamically on every student attempt. Set an optional
+          topic mix and difficulty percentages summing to 100%.
         </span>
       </div>
       {sections.map((section) => {
@@ -52,12 +53,11 @@ export function RuleBasedSelector({
           mediumPercent: 50,
           hardPercent: 20,
         };
+        const sectionQuestions = questions.filter(
+          (q) => q.section_id === section.id,
+        );
         const available = [
-          ...new Set(
-            questions
-              .filter((q) => q.section_id === section.id)
-              .map((q) => q.topic_name),
-          ),
+          ...new Set(sectionQuestions.map((q) => q.topic_name)),
         ].sort();
         const topics = [
           ...new Set([
@@ -93,7 +93,10 @@ export function RuleBasedSelector({
           <section className="rule-section" key={section.id}>
             <div className="rule-section-heading">
               <strong>{section.name}</strong>
-              <span>{section.question_count} questions</span>
+              <span>
+                {section.question_count} needed · {sectionQuestions.length}{" "}
+                published available
+              </span>
             </div>
             <label className="topic-mix-toggle">
               <input

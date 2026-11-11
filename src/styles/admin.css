@@ -700,3 +700,41 @@
 .question-select input {
   accent-color: #6557dc
 }
+
+.datetime-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px
+}
+
+.datetime-input-row input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #e7e7ef;
+  border-radius: 6px;
+  background: #fff;
+  color: #34364b;
+  font: inherit;
+  font-size: 13px
+}
+
+.custom-test-name-input {
+  margin-top: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e7e7ef;
+  border-radius: 6px;
+  background: #fff;
+  color: #34364b;
+  font: inherit;
+  font-size: 13px
+}
+
+.table-subtext {
+  display: block;
+  margin-top: 2px;
+  color: #828496;
+  font-size: 12px
+}

@@ -17,6 +17,31 @@ const api = async (path: string, init?: RequestInit) => {
   return d;
 };
 
+function toLocalDateTimeInput(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function toIsoOrNull(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function buildDefaultRules(selectedStage: any) {
+  return (selectedStage?.sections ?? []).map((sec: any) => ({
+    sectionId: sec.id,
+    topicDistribution: [],
+    easyPercent: 30,
+    mediumPercent: 50,
+    hardPercent: 20,
+  }));
+}
+
 export default function AdminOverview({
   section,
   onNavigate,
@@ -54,7 +79,7 @@ export default function AdminOverview({
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState(60);
   const [reviewPolicy, setReviewPolicy] = useState("after_submit");
-  const [selectionMode, setSelectionMode] = useState("manual");
+  const [selectionMode, setSelectionMode] = useState("rule_based");
   const [selectionRules, setSelectionRules] = useState<any[]>([]);
   const [availabilityStart, setAvailabilityStart] = useState("");
   const [availabilityEnd, setAvailabilityEnd] = useState("");
@@ -74,8 +99,6 @@ export default function AdminOverview({
     correctAnswer: "A",
     explanation: "",
   });
-
-  const stages = exams.find((e) => e.id === examId)?.stages ?? [];
 
   useEffect(() => {
     setBusy(true);
@@ -156,7 +179,7 @@ export default function AdminOverview({
     setDescription("");
     setDuration(60);
     setReviewPolicy("after_submit");
-    setSelectionMode("manual");
+    setSelectionMode("rule_based");
     setSelectionRules([]);
     setAvailabilityStart("");
     setAvailabilityEnd("");
@@ -164,17 +187,26 @@ export default function AdminOverview({
     setBuilder(false);
   }
 
-  function initializeRules(nextStageId: string) {
-    const selectedStage = stages.find((item: any) => item.id === nextStageId);
-    setSelectionRules(
-      (selectedStage?.sections ?? []).map((sec: any) => ({
-        sectionId: sec.id,
-        topicDistribution: [],
-        easyPercent: 30,
-        mediumPercent: 50,
-        hardPercent: 20,
-      })),
+  function applyExamAndStage(nextExamId: string, preferredStageId?: string) {
+    const nextExam = exams.find((item: any) => item.id === nextExamId);
+    const nextStage = preferredStageId
+      ? (nextExam?.stages ?? []).find((s: any) => s.id === preferredStageId)
+      : (nextExam?.stages ?? [])[0];
+    setExamId(nextExam?.id ?? "");
+    setStageId(nextStage?.id ?? "");
+    setSelectionRules(buildDefaultRules(nextStage));
+    setSelected([]);
+    setDuration(
+      nextStage?.duration_seconds
+        ? Math.round(nextStage.duration_seconds / 60)
+        : 60,
     );
+    if (
+      !editingTestId &&
+      (nextExamId !== examId || (nextStage?.id ?? "") !== stageId)
+    ) {
+      setTestName("");
+    }
   }
 
   function editTest(t: any) {
@@ -191,16 +223,8 @@ export default function AdminOverview({
         : "manual",
     );
     setSelectionRules(t.selection_rules ?? []);
-    setAvailabilityStart(
-      t.availability_start
-        ? new Date(t.availability_start).toISOString().slice(0, 16)
-        : "",
-    );
-    setAvailabilityEnd(
-      t.availability_end
-        ? new Date(t.availability_end).toISOString().slice(0, 16)
-        : "",
-    );
+    setAvailabilityStart(toLocalDateTimeInput(t.availability_start));
+    setAvailabilityEnd(toLocalDateTimeInput(t.availability_end));
     setSelected(t.question_ids ?? []);
     setBuilder(true);
     setError("");
@@ -218,6 +242,14 @@ export default function AdminOverview({
       );
       return;
     }
+    if (
+      availabilityStart &&
+      availabilityEnd &&
+      new Date(availabilityEnd) <= new Date(availabilityStart)
+    ) {
+      setError("Available until must be later than Available from.");
+      return;
+    }
     setBusy(true);
     try {
       const input = {
@@ -230,12 +262,8 @@ export default function AdminOverview({
         selectionMode,
         questionIds: selectionMode === "manual" ? selected : [],
         selectionRules: selectionMode === "rule_based" ? selectionRules : [],
-        availabilityStart: availabilityStart
-          ? new Date(availabilityStart).toISOString()
-          : null,
-        availabilityEnd: availabilityEnd
-          ? new Date(availabilityEnd).toISOString()
-          : null,
+        availabilityStart: toIsoOrNull(availabilityStart),
+        availabilityEnd: toIsoOrNull(availabilityEnd),
         status: "draft",
       };
       await api(editingTestId ? `/admin/tests/${editingTestId}` : "/admin/tests", {
@@ -465,15 +493,21 @@ export default function AdminOverview({
           onEditTest={editTest}
           onChangeStatus={changeStatus}
           onCreateTest={createTest}
-          onExamChange={(val) => {
-            setExamId(val);
-            setStageId("");
-            setSelectionRules([]);
-            setSelected([]);
-          }}
+          onExamChange={(val) => applyExamAndStage(val)}
           onStageChange={(val) => {
-            setStageId(val);
-            initializeRules(val);
+            if (!val) {
+              setStageId("");
+              setSelectionRules([]);
+              setSelected([]);
+              if (!editingTestId) setTestName("");
+              return;
+            }
+            const owningExam = exams.find((item: any) =>
+              (item.stages ?? []).some((s: any) => s.id === val),
+            );
+            if (owningExam) {
+              applyExamAndStage(owningExam.id, val);
+            }
           }}
           onSetTestName={setTestName}
           onSetDescription={setDescription}
@@ -481,8 +515,12 @@ export default function AdminOverview({
           onSetReviewPolicy={setReviewPolicy}
           onSetSelectionMode={(mode) => {
             setSelectionMode(mode);
-            if (mode === "rule_based" && !selectionRules.length) {
-              initializeRules(stageId);
+            if (mode === "rule_based" && !selectionRules.length && stageId) {
+              const currentExam = exams.find((item: any) => item.id === examId);
+              const currentStage = (currentExam?.stages ?? []).find(
+                (s: any) => s.id === stageId,
+              );
+              setSelectionRules(buildDefaultRules(currentStage));
             }
           }}
           onSetSelectionRules={setSelectionRules}

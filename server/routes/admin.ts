@@ -7,6 +7,7 @@ import readXlsxFile from 'read-excel-file/node';
 import { pool } from '../db';
 import { requireAdmin, validate } from '../middleware';
 import { examSchema, questionSchema } from '../schemas';
+import { selectNonRepeatingQuestions } from '../services/questionSelection';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -144,7 +145,11 @@ const mockTestDraftSchema = z.object({
   }
 });
 
-async function resolveMockTestQuestions(client: any, input: any) {
+async function resolveMockTestQuestions(
+  client: any,
+  input: any,
+  existingTestId?: string
+) {
   if (input.selectionMode === 'manual') {
     const selected = await client.query(
       `SELECT q.id, q.section_id
@@ -204,106 +209,22 @@ async function resolveMockTestQuestions(client: any, input: any) {
     return selected.rows;
   }
 
-  const sections = await client.query(
-    'SELECT id, question_count FROM exam_sections WHERE stage_id = $1 ORDER BY sort_order, id',
-    [input.stageId]
+  const priorRows = await client.query(
+    `SELECT DISTINCT mtq.question_id
+     FROM mock_test_questions mtq
+     JOIN mock_tests mt ON mt.id = mtq.mock_test_id
+     WHERE mt.stage_id = $1
+       AND mt.status <> 'archived'
+       AND ($2::uuid IS NULL OR mt.id <> $2)`,
+    [input.stageId, existingTestId ?? null]
   );
 
-  if (
-    !sections.rowCount ||
-    sections.rows.some((section: any) => Number(section.question_count) <= 0)
-  ) {
-    throw Object.assign(
-      new Error('Rule-based selection requires positive question counts in every configured section.'),
-      { status: 409 }
-    );
-  }
-
-  const rules = new Map(
-    input.selectionRules.map((rule: any) => [rule.sectionId, rule])
-  );
-
-  if (
-    rules.size !== sections.rowCount ||
-    sections.rows.some((section: any) => !rules.has(section.id))
-  ) {
-    throw Object.assign(
-      new Error('Add a selection rule for each section in the selected exam stage.'),
-      { status: 400 }
-    );
-  }
-
-  const selected: any[] = [];
-
-  for (const section of sections.rows) {
-    const rule: any = rules.get(section.id);
-    const questionCount = Number(section.question_count);
-
-    const topics = rule.topicDistribution.length
-      ? rule.topicDistribution.map((topic: any) => ({
-          topicName: topic.topicName,
-          percent: topic.percent
-        }))
-      : [{ topicName: null, percent: 100 }];
-
-    const difficulties = [
-      ['easy', rule.easyPercent],
-      ['medium', rule.mediumPercent],
-      ['hard', rule.hardPercent]
-    ] as const;
-
-    const cells: any[] = topics.flatMap((topic: any) =>
-      difficulties.map(([difficulty, percent]) => {
-        const share = topic.percent * percent;
-
-        return {
-          topicName: topic.topicName,
-          difficulty,
-          count: Math.floor(questionCount * share / 10000),
-          remainder: (questionCount * share) % 10000
-        };
-      })
-    );
-
-    let unassigned =
-      questionCount - cells.reduce((total: number, cell: any) => total + cell.count, 0);
-
-    for (const cell of [...cells].sort((a, b) => b.remainder - a.remainder)) {
-      if (unassigned > 0) {
-        cell.count++;
-        unassigned--;
-      }
-    }
-
-    for (const cell of cells) {
-      if (!cell.count) continue;
-
-      const matches = await client.query(
-        `SELECT q.id, q.section_id
-         FROM questions q
-         WHERE q.section_id = $1
-           AND q.status = 'published'
-           AND q.difficulty = $2
-           AND ($3::text IS NULL OR q.topic_name = $3)
-         ORDER BY random()
-         LIMIT $4`,
-        [section.id, cell.difficulty, cell.topicName, cell.count]
-      );
-
-      if (matches.rowCount !== cell.count) {
-        throw Object.assign(
-          new Error(
-            `Section rule needs ${cell.count} ${cell.difficulty} questions for ${cell.topicName ?? 'any topic'}, but only ${matches.rowCount} match.`
-          ),
-          { status: 409 }
-        );
-      }
-
-      selected.push(...matches.rows);
-    }
-  }
-
-  return selected;
+  return selectNonRepeatingQuestions(client, {
+    stageId: input.stageId,
+    selectionRules: input.selectionRules ?? [],
+    preferExcludeIds: priorRows.rows.map((r: any) => r.question_id),
+    shuffleWithinSection: true,
+  });
 }
 
 /* -------------------------------------------------------------------------- */

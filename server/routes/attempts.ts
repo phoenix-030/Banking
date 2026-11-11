@@ -8,6 +8,10 @@ import {
   recordStudyDay,
   syncMilestones,
 } from "../services/milestones";
+import {
+  selectNonRepeatingQuestions,
+  shuffleQuestionOptions,
+} from "../services/questionSelection";
 
 export const attemptRouter = Router();
 async function scoreAttempt(
@@ -263,10 +267,28 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
             "This test no longer matches the exam pattern or contains unpublished questions.",
         });
     }
-    const questions = await client.query(
-      "SELECT q.id question_id,q.question_type,q.question_text,q.image_url,pg.title passage_title,pg.passage_text,pg.language passage_language,pg.image_url passage_image_url,q.options,q.topic_name,q.difficulty,q.correct_answer,q.explanation,q.marks,q.negative_marks,sec.id section_id,sec.name section_name,COALESCE(sec.marks_per_correct,q.marks) effective_marks,COALESCE(sec.negative_marks,q.negative_marks) effective_negative_marks,mtq.sort_order FROM mock_test_questions mtq JOIN questions q ON q.id=mtq.question_id LEFT JOIN passage_groups pg ON pg.id=q.passage_group_id JOIN exam_sections sec ON sec.id=mtq.section_id WHERE mtq.mock_test_id=$1 AND q.status='published' ORDER BY sec.sort_order,mtq.sort_order",
-      [String(req.params.testId)],
-    );
+    let questions;
+    if (test.rows[0].selection_mode === "rule_based") {
+      const seenRows = await client.query(
+        "SELECT DISTINCT sa.question_id FROM student_answers sa JOIN test_attempts ta ON ta.id=sa.attempt_id WHERE ta.student_id=$1",
+        [req.session.userId],
+      );
+      const picked = await selectNonRepeatingQuestions(client, {
+        stageId: test.rows[0].stage_id,
+        selectionRules: test.rows[0].selection_rules ?? [],
+        preferExcludeIds: seenRows.rows.map((r: any) => r.question_id),
+        shuffleWithinSection: true,
+      });
+      questions = await client.query(
+        "SELECT q.id question_id,q.question_type,q.question_text,q.image_url,pg.title passage_title,pg.passage_text,pg.language passage_language,pg.image_url passage_image_url,q.options,q.topic_name,q.difficulty,q.correct_answer,q.explanation,q.marks,q.negative_marks,sec.id section_id,sec.name section_name,COALESCE(sec.marks_per_correct,q.marks) effective_marks,COALESCE(sec.negative_marks,q.negative_marks) effective_negative_marks,(w.pos-1)::int sort_order FROM unnest($1::uuid[]) WITH ORDINALITY w(id,pos) JOIN questions q ON q.id=w.id LEFT JOIN passage_groups pg ON pg.id=q.passage_group_id JOIN exam_sections sec ON sec.id=q.section_id WHERE q.status='published' ORDER BY sec.sort_order,w.pos",
+        [picked.map((p) => p.id)],
+      );
+    } else {
+      questions = await client.query(
+        "SELECT q.id question_id,q.question_type,q.question_text,q.image_url,pg.title passage_title,pg.passage_text,pg.language passage_language,pg.image_url passage_image_url,q.options,q.topic_name,q.difficulty,q.correct_answer,q.explanation,q.marks,q.negative_marks,sec.id section_id,sec.name section_name,COALESCE(sec.marks_per_correct,q.marks) effective_marks,COALESCE(sec.negative_marks,q.negative_marks) effective_negative_marks,mtq.sort_order FROM mock_test_questions mtq JOIN questions q ON q.id=mtq.question_id LEFT JOIN passage_groups pg ON pg.id=q.passage_group_id JOIN exam_sections sec ON sec.id=mtq.section_id WHERE mtq.mock_test_id=$1 AND q.status='published' ORDER BY sec.sort_order,mtq.sort_order",
+        [String(req.params.testId)],
+      );
+    }
     if (
       questions.rowCount !==
       sections.rows.reduce((sum, row) => sum + Number(row.question_count), 0)
@@ -326,6 +348,10 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
       )
     ).rows[0];
     for (const row of questions.rows) {
+      const shuffled =
+        row.question_type === "descriptive"
+          ? { options: row.options, correctAnswer: row.correct_answer }
+          : shuffleQuestionOptions(row.options, row.correct_answer);
       const snapshot = {
         question_type: row.question_type,
         question_text: row.question_text,
@@ -334,10 +360,10 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
         passage_text: row.passage_text,
         passage_language: row.passage_language,
         passage_image_url: row.passage_image_url,
-        options: row.options,
+        options: shuffled.options,
         topic_name: row.topic_name,
         difficulty: row.difficulty,
-        correct_answer: row.correct_answer,
+        correct_answer: shuffled.correctAnswer,
         explanation: row.explanation,
         marks: Number(row.effective_marks),
         negative_marks: Number(row.effective_negative_marks),
@@ -455,12 +481,8 @@ attemptRouter.put(
           });
       }
       const question = await client.query(
-        "SELECT mtq.section_id,sa.question_snapshot->'options' options FROM student_answers sa JOIN mock_test_questions mtq ON mtq.question_id=sa.question_id AND mtq.mock_test_id=$2 WHERE sa.attempt_id=$1 AND sa.question_id=$3",
-        [
-          String(req.params.id),
-          attempt.mock_test_id,
-          String(req.params.questionId),
-        ],
+        "SELECT sa.question_snapshot->>'section_id' section_id,sa.question_snapshot->>'question_type' question_type,sa.question_snapshot->'options' options FROM student_answers sa WHERE sa.attempt_id=$1 AND sa.question_id=$2",
+        [String(req.params.id), String(req.params.questionId)],
       );
       if (!question.rowCount) {
         await client.query("ROLLBACK");
