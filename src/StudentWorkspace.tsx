@@ -49,6 +49,9 @@ export default function StudentWorkspace({
   const [syncingAchievements, setSyncingAchievements] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [profileExams, setProfileExams] = useState<any[]>([]);
+  const [examsList, setExamsList] = useState<any[]>([]);
+  const [targetExamId, setTargetExamId] = useState("");
+  const [testExamFilter, setTestExamFilter] = useState("");
   const [profileDraft, setProfileDraft] = useState({
     fullName: "",
     mobile: "",
@@ -122,14 +125,30 @@ export default function StudentWorkspace({
     setBusy(true);
     setError("");
     let task: Promise<any>;
-    if (section === "Overview" || section === "Performance")
-      task = api("/dashboard").then(setData);
+    if (section === "Overview")
+      task = Promise.all([
+        api("/dashboard"),
+        api("/exams"),
+        api("/practice/catalog"),
+        api("/auth/me"),
+      ]).then(([dash, ex, cat, me]) => {
+        setData(dash);
+        setExamsList(ex.exams ?? []);
+        setCatalog(cat.catalog ?? []);
+        setTargetExamId(me.profile?.target_exam_id ?? "");
+      });
+    else if (section === "Performance") task = api("/dashboard").then(setData);
     else if (section === "Daily challenge")
       task = api("/daily-challenge").then(setDailyChallenge);
     else if (section === "Mock tests")
-      task = Promise.all([api("/tests"), api("/attempts/active")]).then(
-        async ([d, a]) => {
+      task = Promise.all([
+        api("/tests"),
+        api("/attempts/active"),
+        api("/exams"),
+      ]).then(
+        async ([d, a, ex]) => {
           setTests(d.tests);
+          setExamsList(ex.exams ?? []);
           if (a.attemptId) {
             const current = await api(`/attempts/${a.attemptId}`);
             setAttemptId(a.attemptId);
@@ -146,8 +165,10 @@ export default function StudentWorkspace({
         api("/practice/catalog"),
         api("/bookmarks"),
         api("/practice/responses"),
-      ]).then(([d, b, r]) => {
+        api("/exams"),
+      ]).then(([d, b, r, ex]) => {
         setCatalog(d.catalog);
+        setExamsList(ex.exams ?? []);
         setBookmarks(new Set(b.bookmarks.map((q: any) => q.id)));
         setBookmarkedQuestions(b.bookmarks);
         setPracticeResponses(r.responses);
@@ -207,6 +228,47 @@ export default function StudentWorkspace({
       document.removeEventListener("visibilitychange", refreshIfVisible);
     };
   }, [section]);
+  useEffect(() => {
+    const onSync = (event: Event) => {
+      const next = (event as CustomEvent<string>).detail ?? "";
+      setTargetExamId(next);
+      setProfileDraft((d) => ({ ...d, targetExamId: next }));
+    };
+    window.addEventListener("hhk:target-exam-updated", onSync);
+    return () => window.removeEventListener("hhk:target-exam-updated", onSync);
+  }, []);
+  const selectTargetExam = async (examId: string) => {
+    const nextId = examId === targetExamId ? "" : examId;
+    const prevId = targetExamId;
+    setTargetExamId(nextId);
+    try {
+      const current = profile?.user ? profile : await api("/auth/me");
+      await api("/auth/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          fullName: current.user.fullName,
+          mobile: current.user.mobile,
+          targetExamId: nextId || null,
+        }),
+      });
+      if (profile?.profile) {
+        setProfile({
+          ...profile,
+          profile: { ...profile.profile, target_exam_id: nextId || null },
+        });
+      }
+      setProfileDraft((d) => ({ ...d, targetExamId: nextId }));
+      window.dispatchEvent(
+        new CustomEvent("hhk:target-exam-updated", { detail: nextId }),
+      );
+      onToast(
+        nextId ? "Target examination updated." : "Target examination cleared.",
+      );
+    } catch (e) {
+      setTargetExamId(prevId);
+      setError((e as Error).message || "Could not update target examination.");
+    }
+  };
   const startAttempt = async (testId: string) => {
     setBusy(true);
     setError("");
@@ -646,6 +708,10 @@ export default function StudentWorkspace({
           user={user}
           summary={summary}
           data={data}
+          exams={examsList}
+          catalog={catalog}
+          targetExamId={targetExamId}
+          onSelectTargetExam={selectTargetExam}
           onNavigate={onNavigate}
         />
       )}
@@ -673,6 +739,9 @@ export default function StudentWorkspace({
       {section === "Mock tests" && (
         <MockTestListView
           tests={tests}
+          exams={examsList}
+          examFilter={testExamFilter}
+          setExamFilter={setTestExamFilter}
           busy={busy}
           onStartAttempt={startAttempt}
         />
@@ -689,6 +758,7 @@ export default function StudentWorkspace({
           setDifficulty={setDifficulty}
           count={count}
           setCount={setCount}
+          exams={examsList}
           catalog={catalog}
           busy={busy}
           onStartPractice={startPractice}
@@ -750,6 +820,11 @@ export default function StudentWorkspace({
               });
               const updated = await api("/auth/me");
               setProfile(updated);
+              const nextExamId = updated.profile?.target_exam_id ?? "";
+              setTargetExamId(nextExamId);
+              window.dispatchEvent(
+                new CustomEvent("hhk:target-exam-updated", { detail: nextExamId }),
+              );
               onToast("Profile updated.");
             } catch (e) {
               setError((e as Error).message);

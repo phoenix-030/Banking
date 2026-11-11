@@ -1,15 +1,21 @@
 import {
   Activity,
   ArrowRight,
+  CheckCircle2,
   ShieldCheck,
   Target,
   Trophy,
 } from "lucide-react";
+import { groupExamsByCategory } from "../../utils/examCategories";
 
 interface StudentOverviewProps {
   user: { fullName: string };
   summary: any;
   data: any;
+  exams: any[];
+  catalog: any[];
+  targetExamId: string;
+  onSelectTargetExam: (examId: string) => void;
   onNavigate: (page: string) => void;
 }
 
@@ -17,8 +23,14 @@ export function StudentOverview({
   user,
   summary,
   data,
+  exams,
+  catalog,
+  targetExamId,
+  onSelectTargetExam,
   onNavigate,
 }: StudentOverviewProps) {
+  const readyExamIds = new Set(catalog.map((c: any) => c.exam_id));
+  const examGroups = groupExamsByCategory(exams);
   const statCards = [
     ["Mock tests attempted", summary.attempts ?? 0, Target],
     ["Questions attempted", summary.questions ?? 0, Activity],
@@ -124,6 +136,73 @@ export function StudentOverview({
           </button>
         </section>
       </div>
+
+      {exams.length > 0 && (
+        <section className="panel admin-panel student-exam-directory">
+          <div className="section-heading">
+            <div>
+              <span className="section-kicker">MASTER EXAM CATALOGUE</span>
+              <h2>Banking &amp; regulatory examinations ({exams.length})</h2>
+            </div>
+            <button
+              className="text-link"
+              onClick={() => onNavigate("Profile")}
+            >
+              Manage target exam <ArrowRight size={14} />
+            </button>
+          </div>
+          <p className="exam-directory-sub">
+            Click any examination to set it as your target. Exams marked with a
+            green dot already have published practice questions ready.
+          </p>
+          <div className="exam-category-grid">
+            {examGroups.map((group) => (
+              <div className="exam-category-block" key={group.category}>
+                <div className="exam-category-head">
+                  <span>{group.category}</span>
+                  <b>{group.exams.length}</b>
+                </div>
+                <div className="exam-chip-list">
+                  {group.exams.map((exam: any) => {
+                    const isTarget = exam.id === targetExamId;
+                    const isReady =
+                      exam.status === "published" && readyExamIds.has(exam.id);
+                    return (
+                      <button
+                        type="button"
+                        key={exam.id}
+                        className={`exam-chip-btn ${isTarget ? "active" : ""} ${
+                          isReady ? "ready" : ""
+                        }`}
+                        onClick={() => onSelectTargetExam(exam.id)}
+                        title={
+                          isReady
+                            ? `${exam.name} · Practice & mocks ready`
+                            : `${exam.name} · Click to set as target exam`
+                        }
+                      >
+                        <span>
+                          {isTarget && <CheckCircle2 size={13} />}
+                          {exam.name}
+                        </span>
+                        <small>
+                          {isTarget
+                            ? "Target"
+                            : isReady
+                              ? "Ready"
+                              : exam.status === "published"
+                                ? "Published"
+                                : "Catalogue"}
+                        </small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

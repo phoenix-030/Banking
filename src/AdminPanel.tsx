@@ -11,6 +11,7 @@ const defaultExam = (name: string, code: string): Exam => ({
   id: "",
   name,
   code,
+  category: "Other Banks / Institutions",
   description: "Pattern pending official verification.",
   pattern_cycle: null,
   pattern_source_url: null,
@@ -268,6 +269,7 @@ export default function AdminPanel({
       const payload = {
         code: exam.code,
         name: exam.name,
+        category: exam.category || "Other Banks / Institutions",
         description: exam.description,
         patternCycle: exam.pattern_cycle || null,
         patternSourceUrl: exam.pattern_source_url || null,

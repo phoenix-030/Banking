@@ -199,7 +199,7 @@ async function advanceAttempt(
 }
 attemptRouter.get("/tests", requireAuth, async (_req, res) => {
   const rows = await pool.query(
-    "SELECT t.id,t.name,t.description,t.duration_seconds,t.review_policy,e.name exam_name,e.pattern_cycle,e.pattern_source_url,st.name stage_name FROM mock_tests t JOIN exams e ON e.id=t.exam_id JOIN exam_stages st ON st.id=t.stage_id WHERE t.status='published' AND e.status='published' AND (t.availability_start IS NULL OR t.availability_start<=now()) AND (t.availability_end IS NULL OR t.availability_end>=now()) ORDER BY t.created_at DESC",
+    "SELECT t.id,t.name,t.description,t.duration_seconds,t.review_policy,e.id exam_id,e.name exam_name,e.category exam_category,e.pattern_cycle,e.pattern_source_url,st.name stage_name FROM mock_tests t JOIN exams e ON e.id=t.exam_id JOIN exam_stages st ON st.id=t.stage_id WHERE t.status='published' AND e.status='published' AND (t.availability_start IS NULL OR t.availability_start<=now()) AND (t.availability_end IS NULL OR t.availability_end>=now()) ORDER BY t.created_at DESC",
   );
   res.json({ tests: rows.rows });
 });

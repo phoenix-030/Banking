@@ -1,3 +1,5 @@
+import { ExamOptGroups } from "../../utils/examCategories";
+
 interface StudentProfileViewProps {
   profile: {
     user: {
@@ -77,11 +79,12 @@ export function StudentProfileView({
               }
             >
               <option value="">Choose an exam</option>
-              {profileExams.map((exam: any) => (
-                <option key={exam.id} value={exam.id}>
-                  {exam.name}
-                </option>
-              ))}
+              <ExamOptGroups
+                exams={profileExams}
+                getKey={(exam: any) => exam.id}
+                getValue={(exam: any) => exam.id}
+                getLabel={(exam: any) => exam.name}
+              />
             </select>
           </label>
           <label className="form-field">

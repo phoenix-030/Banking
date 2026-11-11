@@ -1,5 +1,10 @@
 import { Check, CirclePlus, Plus, Save } from "lucide-react";
 import { Field } from "../common/Field";
+import {
+  EXAM_CATEGORIES,
+  ExamOptGroups,
+  groupExamsByCategory,
+} from "../../utils/examCategories";
 
 export type Section = {
   id: string;
@@ -23,6 +28,8 @@ export type Exam = {
   id: string;
   code: string;
   name: string;
+  category?: string;
+  sort_order?: number;
   description: string;
   pattern_cycle: string | null;
   pattern_source_url: string | null;
@@ -108,6 +115,47 @@ export function ExamSetupView({
 
         {exams.length > 0 && (
           <>
+            <div className="exam-directory-box">
+              <div className="exam-directory-header">
+                <strong>Master Exam Catalogue ({exams.length} total)</strong>
+                <span>Click any exam below to inspect or edit its pattern</span>
+              </div>
+              <div className="exam-category-grid">
+                {groupExamsByCategory(exams).map((group) => (
+                  <div className="exam-category-block" key={group.category}>
+                    <div className="exam-category-head">
+                      <span>{group.category}</span>
+                      <b>{group.exams.length}</b>
+                    </div>
+                    <div className="exam-chip-list">
+                      {group.exams.map((item) => {
+                        const globalIdx = exams.findIndex(
+                          (x) => x.id === item.id,
+                        );
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            className={`exam-chip-btn ${
+                              globalIdx === examIndex ? "active" : ""
+                            } ${item.status}`}
+                            onClick={() => {
+                              onSetExamIndex(globalIdx);
+                              onSetStageIndex(0);
+                            }}
+                            title={`Code: ${item.code} · Status: ${item.status}`}
+                          >
+                            <span>{item.name}</span>
+                            <small>{item.status}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="config-selectors">
               <label>
                 Examination
@@ -118,11 +166,12 @@ export function ExamSetupView({
                     onSetStageIndex(0);
                   }}
                 >
-                  {exams.map((e, i) => (
-                    <option value={i} key={e.id}>
-                      {e.name} · {e.status}
-                    </option>
-                  ))}
+                  <ExamOptGroups
+                    exams={exams}
+                    getKey={(e) => e.id}
+                    getValue={(_e, i) => i}
+                    getLabel={(e) => `${e.name} · ${e.status}`}
+                  />
                 </select>
               </label>
 
@@ -156,6 +205,24 @@ export function ExamSetupView({
                     onChange={(v) => onSetStage("duration_seconds", v)}
                   />
                   <Field label="Exam code" value={exam.code} readOnly />
+                  <label className="form-field">
+                    Category
+                    <select
+                      value={exam.category ?? "Other Banks / Institutions"}
+                      onChange={(e) =>
+                        onUpdateExam((current) => ({
+                          ...current,
+                          category: e.target.value,
+                        }))
+                      }
+                    >
+                      {EXAM_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
 
                 <div className="config-fields">
@@ -206,7 +273,8 @@ export function ExamSetupView({
                     </select>
                   </label>
                   <span>
-                    Only published exams appear in the student catalog.
+                    Published exams unlock student mock tests and topic
+                    practice; all active exams appear in the student exam list.
                   </span>
                 </div>
 

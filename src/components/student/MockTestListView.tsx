@@ -1,16 +1,27 @@
 import { ArrowRight, Clock3, Play } from "lucide-react";
+import { ExamOptGroups } from "../../utils/examCategories";
 
 interface MockTestListViewProps {
   tests: any[];
+  exams: any[];
+  examFilter: string;
+  setExamFilter: (examId: string) => void;
   busy: boolean;
   onStartAttempt: (testId: string) => void;
 }
 
 export function MockTestListView({
   tests,
+  exams,
+  examFilter,
+  setExamFilter,
   busy,
   onStartAttempt,
 }: MockTestListViewProps) {
+  const visibleTests = examFilter
+    ? tests.filter((t) => t.exam_id === examFilter)
+    : tests;
+
   return (
     <>
       <div className="student-welcome">
@@ -22,9 +33,25 @@ export function MockTestListView({
             rules.
           </p>
         </div>
+        {exams.length > 0 && (
+          <select
+            className="period-select"
+            aria-label="Filter mock tests by exam"
+            value={examFilter}
+            onChange={(e) => setExamFilter(e.target.value)}
+          >
+            <option value="">All exams ({exams.length})</option>
+            <ExamOptGroups
+              exams={exams}
+              getKey={(e: any) => e.id}
+              getValue={(e: any) => e.id}
+              getLabel={(e: any) => e.name}
+            />
+          </select>
+        )}
       </div>
-      {tests.length ? (
-        tests.map((t) => (
+      {visibleTests.length ? (
+        visibleTests.map((t) => (
           <div className="panel test-card" key={t.id}>
             <div>
               <span className="exam-pill">

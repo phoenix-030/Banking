@@ -426,13 +426,14 @@ adminRouter.post('/exams', async (req, res) => {
     const exam = (
       await client.query(
         `INSERT INTO exams
-          (code, name, description, status, pattern_cycle, pattern_source_url, created_by)
-         VALUES ($1, $2, $3, 'draft', $4, $5, $6)
-         RETURNING id, code, name, description, status,
+          (code, name, category, description, status, pattern_cycle, pattern_source_url, created_by)
+         VALUES ($1, $2, $3, $4, 'draft', $5, $6, $7)
+         RETURNING id, code, name, category, sort_order, description, status,
                    pattern_cycle, pattern_source_url, pattern_verified_at`,
         [
           input.code.toUpperCase(),
           input.name,
+          input.category,
           input.description,
           input.patternCycle,
           input.patternSourceUrl,
@@ -658,21 +659,23 @@ adminRouter.put('/exams/:id', async (req, res) => {
       `UPDATE exams
        SET code = $2,
            name = $3,
-           description = $4,
-           status = $5,
-           pattern_cycle = $6,
-           pattern_source_url = $7,
+           category = $4,
+           description = $5,
+           status = $6,
+           pattern_cycle = $7,
+           pattern_source_url = $8,
            pattern_verified_at =
-             CASE WHEN $5 = 'published' THEN now() ELSE NULL END,
+             CASE WHEN $6 = 'published' THEN now() ELSE NULL END,
            updated_at = now()
        WHERE id = $1
        RETURNING
-         id, code, name, description, status,
+         id, code, name, category, sort_order, description, status,
          pattern_cycle, pattern_source_url, pattern_verified_at`,
       [
         req.params.id,
         input.code.toUpperCase(),
         input.name,
+        input.category,
         input.description,
         input.status,
         input.patternCycle,

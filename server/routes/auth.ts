@@ -304,7 +304,7 @@ authRouter.patch("/profile", requireAuth, async (req, res) => {
     await client.query("BEGIN");
     if (Object.hasOwn(input, "targetExamId") && input.targetExamId) {
       const target = await client.query(
-        "SELECT id FROM exams WHERE id=$1 AND status='published' FOR SHARE",
+        "SELECT id FROM exams WHERE id=$1 AND status<>'archived' FOR SHARE",
         [input.targetExamId],
       );
       if (!target.rowCount) {
@@ -312,7 +312,7 @@ authRouter.patch("/profile", requireAuth, async (req, res) => {
         return res
           .status(400)
           .json({
-            error: "Choose a currently published examination as your target.",
+            error: "Choose an active examination from the catalogue as your target.",
           });
       }
     }

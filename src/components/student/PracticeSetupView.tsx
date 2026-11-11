@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Field } from "../common/Field";
+import { ExamOptGroups } from "../../utils/examCategories";
 
 interface PracticeSetupViewProps {
   selectedExam: string;
@@ -12,6 +13,7 @@ interface PracticeSetupViewProps {
   setDifficulty: (diff: string) => void;
   count: number;
   setCount: (c: number) => void;
+  exams: any[];
   catalog: any[];
   busy: boolean;
   onStartPractice: () => void;
@@ -29,12 +31,18 @@ export function PracticeSetupView({
   setDifficulty,
   count,
   setCount,
+  exams,
   catalog,
   busy,
   onStartPractice,
   practiceResponses,
 }: PracticeSetupViewProps) {
-  const exams = [...new Map(catalog.map((c) => [c.exam_id, c])).values()];
+  const readyExamIds = new Set(catalog.map((c) => c.exam_id));
+  const examOptions = exams.length
+    ? exams
+    : [...new Map(catalog.map((c) => [c.exam_id, { id: c.exam_id, name: c.exam_name, category: c.exam_category }])).values()];
+  const selectedHasQuestions =
+    !selectedExam || readyExamIds.has(selectedExam);
 
   return (
     <>
@@ -49,13 +57,11 @@ export function PracticeSetupView({
         </div>
       </div>
       <section className="panel admin-panel practice-setup">
-        {!exams.length && !busy ? (
+        {!examOptions.length && !busy ? (
           <div className="empty-questions">
-            <strong>No published practice exams available yet</strong>
+            <strong>No exams available yet</strong>
             <span>
-              Exams only appear here after an administrator publishes both the
-              examination (in Exam setup) and at least one question in its
-              sections (in Question bank).
+              Examinations will appear here once configured by an administrator.
             </span>
           </div>
         ) : (
@@ -72,11 +78,14 @@ export function PracticeSetupView({
                   }}
                 >
                   <option value="">Select exam</option>
-                  {exams.map((c: any) => (
-                    <option key={c.exam_id} value={c.exam_id}>
-                      {c.exam_name}
-                    </option>
-                  ))}
+                  <ExamOptGroups
+                    exams={examOptions}
+                    getKey={(e: any) => e.id}
+                    getValue={(e: any) => e.id}
+                    getLabel={(e: any) =>
+                      `${e.name}${readyExamIds.has(e.id) ? " · Ready" : " · Coming soon"}`
+                    }
+                  />
                 </select>
               </label>
               <label>
@@ -140,6 +149,13 @@ export function PracticeSetupView({
                 }
               />
             </div>
+            {selectedExam && !selectedHasQuestions && !busy && (
+              <div className="admin-notice" role="status">
+                Published practice questions are not added for this examination
+                yet. Pick an examination marked <strong>Ready</strong> or try{" "}
+                <strong>Daily challenge</strong>.
+              </div>
+            )}
             <button
               className="primary-btn"
               disabled={!sectionId || busy}

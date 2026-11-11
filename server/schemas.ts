@@ -28,9 +28,18 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
+export const EXAM_CATEGORIES = [
+  'IBPS',
+  'SBI',
+  'RBI',
+  'NABARD',
+  'Other Banks / Institutions',
+] as const;
+
 export const examSchema = z.object({
   code: z.string().trim().min(2).max(32).regex(/^[A-Za-z0-9_-]+$/),
   name: z.string().trim().min(3).max(160),
+  category: z.enum(EXAM_CATEGORIES).default('Other Banks / Institutions'),
   description: z.string().trim().max(4000).default(''),
   patternCycle: z.string().trim().min(4).max(40).nullable().default(null),
   patternSourceUrl: z.string().url().max(2000).refine(

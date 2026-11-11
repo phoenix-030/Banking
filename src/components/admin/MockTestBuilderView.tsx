@@ -1,6 +1,7 @@
 import { ArrowRight, FileQuestion } from "lucide-react";
 import { Field } from "../common/Field";
 import { RuleBasedSelector } from "./RuleBasedSelector";
+import { ExamOptGroups } from "../../utils/examCategories";
 
 interface MockTestBuilderViewProps {
   tests: any[];
@@ -131,11 +132,12 @@ export function MockTestBuilderView({
                   onChange={(e) => onExamChange(e.target.value)}
                 >
                   <option value="">Select exam</option>
-                  {exams.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
+                  <ExamOptGroups
+                    exams={exams}
+                    getKey={(e) => e.id}
+                    getValue={(e) => e.id}
+                    getLabel={(e) => `${e.name} · ${e.status}`}
+                  />
                 </select>
               </label>
 

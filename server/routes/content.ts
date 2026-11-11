@@ -6,7 +6,8 @@ import { recordStudyDay, syncMilestones } from '../services/milestones';
 
 export const contentRouter=Router();
 contentRouter.get('/exams',async(req,res)=>{
-  const sql=req.session.role==='admin'?"SELECT id,code,name,description,status,pattern_cycle,pattern_source_url,pattern_verified_at FROM exams WHERE status<>'archived' ORDER BY name":"SELECT id,code,name,description,status,pattern_cycle,pattern_source_url,pattern_verified_at FROM exams WHERE status='published' ORDER BY name";
+  const onlyPublished=req.query.publishedOnly==='true'&&req.session.role!=='admin';
+  const sql=onlyPublished?"SELECT id,code,name,category,sort_order,description,status,pattern_cycle,pattern_source_url,pattern_verified_at FROM exams WHERE status='published' ORDER BY sort_order,name":"SELECT id,code,name,category,sort_order,description,status,pattern_cycle,pattern_source_url,pattern_verified_at FROM exams WHERE status<>'archived' ORDER BY sort_order,name";
   const exams=(await pool.query(sql)).rows;
   const expanded=await Promise.all(exams.map(async exam=>{
     const stages=(await pool.query('SELECT id,name,duration_seconds,sort_order FROM exam_stages WHERE exam_id=$1 ORDER BY sort_order,name',[exam.id])).rows;

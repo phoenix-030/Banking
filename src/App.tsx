@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { ExamOptGroups } from "./utils/examCategories";
 import {
   Activity,
   ArrowRight,
@@ -271,6 +272,12 @@ function TargetExamSelector({
         setSelected(m.profile?.target_exam_id ?? "");
       })
       .catch(() => setError("Exam list unavailable"));
+    const onSync = (event: Event) => {
+      const next = (event as CustomEvent<string>).detail ?? "";
+      setSelected(next);
+    };
+    window.addEventListener("hhk:target-exam-updated", onSync);
+    return () => window.removeEventListener("hhk:target-exam-updated", onSync);
   }, []);
   async function change(id: string) {
     setSelected(id);
@@ -289,6 +296,9 @@ function TargetExamSelector({
         }),
       });
       if (!response.ok) throw new Error();
+      window.dispatchEvent(
+        new CustomEvent("hhk:target-exam-updated", { detail: id }),
+      );
       onToast("Target examination saved.");
     } catch {
       setError("Could not save target examination.");
@@ -305,18 +315,19 @@ function TargetExamSelector({
         onChange={(e) => change(e.target.value)}
         aria-label="Target examination"
       >
-        <option value="">Choose published exam</option>
-        {exams.map((e) => (
-          <option key={e.id} value={e.id}>
-            {e.name}
-          </option>
-        ))}
+        <option value="">Choose target exam</option>
+        <ExamOptGroups
+          exams={exams}
+          getKey={(e) => e.id}
+          getValue={(e) => e.id}
+          getLabel={(e) => e.name}
+        />
       </select>
       <div className="target-date">
         <CalendarDays size={14} />
         {exams.length
-          ? "Only published patterns appear here"
-          : "No exams published yet"}
+          ? `${exams.length} banking exams available`
+          : "No active exams in catalogue"}
       </div>
       {error && <small className="target-error">{error}</small>}
     </div>

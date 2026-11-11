@@ -1,14 +1,11 @@
-import {
-  Check,
-  Copy,
-  FileQuestion,
-  FileSpreadsheet,
-  Save,
-  Search,
-  Trash2,
+import {  Check,  Copy,  FileQuestion,  FileSpreadsheet,  Save,  Search,  Trash2,
 } from "lucide-react";
 import { Field } from "../common/Field";
 import type { Exam } from "./ExamSetupView";
+import {
+  ExamOptGroups,
+  groupExamsByCategory,
+} from "../../utils/examCategories";
 
 export type Question = {
   id: string;
@@ -180,6 +177,24 @@ export function QuestionBankView({
             Validate upload
           </button>
         </div>
+        {exams.length > 0 && (
+          <details className="supported-codes-hint">
+            <summary>
+              Supported <code>exam_code</code> values ({exams.length} exams across{" "}
+              {groupExamsByCategory(exams).length} categories)
+            </summary>
+            <div className="supported-codes-grid">
+              {groupExamsByCategory(exams).map((group) => (
+                <div key={group.category}>
+                  <strong>{group.category}</strong>
+                  <span>
+                    {group.exams.map((item) => `${item.code} (${item.name})`).join(" · ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         {uploadPreview && (
           <div className="upload-results">
             <div>
@@ -242,8 +257,8 @@ export function QuestionBankView({
             <div className="admin-notice" role="status">
               <strong>{exam.name}</strong> is currently in{" "}
               <strong>{exam.status}</strong> status. Published questions here
-              will not appear to students under Practice or Mock tests until
-              you publish the examination under <strong>Exam setup</strong>.
+              will not appear to students under Practice or Mock tests until you
+              publish the examination under <strong>Exam setup</strong>.
             </div>
           )}
           <div className="question-config">
@@ -261,11 +276,12 @@ export function QuestionBankView({
                   }));
                 }}
               >
-                {exams.map((e, i) => (
-                  <option value={i} key={e.id}>
-                    {e.name} · {e.status}
-                  </option>
-                ))}
+                <ExamOptGroups
+                  exams={exams}
+                  getKey={(e) => e.id}
+                  getValue={(_e, i) => i}
+                  getLabel={(e) => `${e.name} · ${e.status}`}
+                />
               </select>
             </label>
             <label>
@@ -439,9 +455,7 @@ export function QuestionBankView({
                 className="outline-btn admin-action"
                 onClick={() => onSetShowNewPassage((value) => !value)}
               >
-                {showNewPassage
-                  ? "Cancel new passage"
-                  : "Create passage group"}
+                {showNewPassage ? "Cancel new passage" : "Create passage group"}
               </button>
               {showNewPassage && (
                 <div className="passage-create-form">
@@ -528,9 +542,7 @@ export function QuestionBankView({
                   >
                     <button
                       type="button"
-                      onClick={() =>
-                        onSetForm({ ...form, correctAnswer: key })
-                      }
+                      onClick={() => onSetForm({ ...form, correctAnswer: key })}
                     >
                       {key}
                     </button>
@@ -745,9 +757,7 @@ export function QuestionBankView({
                     </span>
                     <span>{q.topic_name}</span>
                     {q.passage_title && <span>{q.passage_title}</span>}
-                    <b
-                      className={q.status === "published" ? "published" : ""}
-                    >
+                    <b className={q.status === "published" ? "published" : ""}>
                       {q.status}
                     </b>
                   </div>
