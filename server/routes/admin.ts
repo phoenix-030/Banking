@@ -1427,28 +1427,31 @@ async function decodeRows(data: string, name: string) {
   );
 }
 
+const IMPORT_COLUMNS = [
+  'exam_code',
+  'stage',
+  'section',
+  'topic',
+  'difficulty',
+  'question',
+  'option_a',
+  'option_b',
+  'option_c',
+  'option_d',
+  'correct_answer',
+  'explanation',
+  'language',
+  'source'
+] as const;
+
+const REQUIRED_IMPORT_COLUMNS = IMPORT_COLUMNS.filter(
+  column => column !== 'source'
+);
+
 function rowErrors(row: Record<string, string>) {
   const errors: string[] = [];
 
-  const requiredColumns = [
-    'exam_code',
-    'stage',
-    'section',
-    'topic',
-    'difficulty',
-    'question',
-    'option_a',
-    'option_b',
-    'option_c',
-    'option_d',
-    'correct_answer',
-    'explanation',
-    'marks',
-    'negative_marks',
-    'language'
-  ];
-
-  for (const key of requiredColumns) {
+  for (const key of REQUIRED_IMPORT_COLUMNS) {
     if (!row[key]) {
       errors.push(`Missing ${key}`);
     }
@@ -1494,9 +1497,7 @@ function rowErrors(row: Record<string, string>) {
 adminRouter.get('/questions/import/template.csv', (_req, res) => {
   res.type('text/csv')
     .attachment('hhk-question-template.csv')
-    .send(
-      'exam_code,stage,section,topic,difficulty,question,option_a,option_b,option_c,option_d,correct_answer,explanation,marks,negative_marks,language,source,source_year\n'
-    );
+    .send(`${IMPORT_COLUMNS.join(',')}\n`);
 });
 
 adminRouter.post('/questions/import/preview', async (req, res) => {
@@ -1748,7 +1749,7 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
       const row = item.row;
 
       const section = await client.query(
-        `SELECT s.id
+        `SELECT s.id, s.marks_per_correct, s.negative_marks
          FROM exam_sections s
          JOIN exam_stages st ON st.id = s.stage_id
          JOIN exams e ON e.id = st.exam_id
@@ -1804,8 +1805,12 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
           JSON.stringify(options),
           row.correct_answer.toUpperCase(),
           row.explanation,
-          Number(row.marks),
-          Number(row.negative_marks),
+          row.marks
+            ? Number(row.marks)
+            : Number(section.rows[0].marks_per_correct ?? 1),
+          row.negative_marks
+            ? Number(row.negative_marks)
+            : Number(section.rows[0].negative_marks ?? 0),
           row.source ?? '',
           row.source_year ? Number(row.source_year) : null,
           req.session.userId,
@@ -1874,25 +1879,7 @@ adminRouter.get('/questions/import/:batchId/errors.csv', async (req, res) => {
     [req.params.batchId]
   );
 
-  const columns = [
-    'exam_code',
-    'stage',
-    'section',
-    'topic',
-    'difficulty',
-    'question',
-    'option_a',
-    'option_b',
-    'option_c',
-    'option_d',
-    'correct_answer',
-    'explanation',
-    'marks',
-    'negative_marks',
-    'language',
-    'source',
-    'source_year'
-  ];
+  const columns = [...IMPORT_COLUMNS];
 
   const output = [
     ['row_number', 'errors', ...columns]
