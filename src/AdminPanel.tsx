@@ -430,7 +430,7 @@ export default function AdminPanel({
         sourceYear: form.sourceYear ? Number(form.sourceYear) : null,
         status,
       };
-      await api(`/admin/questions${editId ? `/${editId}` : ""}`, {
+      const saved = await api(`/admin/questions${editId ? `/${editId}` : ""}`, {
         method: editId ? "PUT" : "POST",
         body: JSON.stringify(payload),
       });
@@ -438,8 +438,11 @@ export default function AdminPanel({
       setEditId("");
       setPreview(false);
       await loadQuestions();
+      const synced = (saved?.syncedTests ?? []).filter((s: any) => s.synced);
       onToast(
-        `Question ${editId ? "updated" : "saved"} to PostgreSQL as ${status}.`,
+        synced.length
+          ? `Question ${editId ? "updated" : "published"}. Student Mock Tests updated (${synced.map((s: any) => `${s.examName} ${s.stageName}`).join(", ")}).`
+          : `Question ${editId ? "updated" : "saved"} to PostgreSQL as ${status}.`,
       );
     } catch (e) {
       setError((e as Error).message);
@@ -498,7 +501,12 @@ export default function AdminPanel({
       });
       setSelectedQuestionIds([]);
       await loadQuestions();
-      onToast(`${result.updated} questions moved to ${status}.`);
+      const synced = (result?.syncedTests ?? []).filter((s: any) => s.synced);
+      onToast(
+        synced.length
+          ? `${result.updated} questions moved to ${status}. Student Mock Tests synced (${synced.map((s: any) => `${s.examName} ${s.stageName}`).join(", ")}).`
+          : `${result.updated} questions moved to ${status}.`,
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -558,7 +566,12 @@ export default function AdminPanel({
         `/admin/questions/import/${uploadPreview.batchId}/confirm`,
         { method: "POST", body: JSON.stringify({ rowNumbers: confirmRows }) },
       );
-      onToast(`${result.imported} valid questions imported as drafts.`);
+      const synced = (result?.syncedTests ?? []).filter((s: any) => s.synced);
+      onToast(
+        synced.length
+          ? `${result.imported} questions uploaded & published. Student Mock Tests unlocked (${synced.map((s: any) => `${s.examName} ${s.stageName}`).join(", ")}) and Daily Challenge updated!`
+          : `${result.imported} questions uploaded and published to the Question Bank.`,
+      );
       setUploadPreview(null);
       setUploadFile(null);
       await loadQuestions();

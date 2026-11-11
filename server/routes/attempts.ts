@@ -12,6 +12,7 @@ import {
   selectNonRepeatingQuestions,
   shuffleQuestionOptions,
 } from "../services/questionSelection";
+import { MIN_BANK_UPLOAD_QUESTIONS } from "../services/questionBankSync";
 
 export const attemptRouter = Router();
 async function scoreAttempt(
@@ -203,7 +204,7 @@ async function advanceAttempt(
 }
 attemptRouter.get("/tests", requireAuth, async (_req, res) => {
   const rows = await pool.query(
-    "SELECT t.id,t.name,t.description,t.duration_seconds,t.review_policy,e.id exam_id,e.name exam_name,e.category exam_category,e.pattern_cycle,e.pattern_source_url,st.name stage_name FROM mock_tests t JOIN exams e ON e.id=t.exam_id JOIN exam_stages st ON st.id=t.stage_id WHERE t.status='published' AND e.status='published' AND (t.availability_start IS NULL OR t.availability_start<=now()) AND (t.availability_end IS NULL OR t.availability_end>=now()) ORDER BY t.created_at DESC",
+    "SELECT t.id,t.name,t.description,t.duration_seconds,t.review_policy,t.auto_generated,(SELECT count(*)::int FROM mock_test_questions mtq WHERE mtq.mock_test_id=t.id) question_count,e.id exam_id,e.name exam_name,e.category exam_category,e.pattern_cycle,e.pattern_source_url,st.name stage_name FROM mock_tests t JOIN exams e ON e.id=t.exam_id JOIN exam_stages st ON st.id=t.stage_id WHERE t.status='published' AND e.status='published' AND (t.availability_start IS NULL OR t.availability_start<=now()) AND (t.availability_end IS NULL OR t.availability_end>=now()) ORDER BY t.auto_generated ASC,t.created_at DESC",
   );
   res.json({ tests: rows.rows });
 });
@@ -250,25 +251,57 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
       "SELECT s.id section_id,s.name section_name,s.question_count,s.duration_seconds,count(mtq.question_id)::int selected,count(q.id) FILTER(WHERE q.status='published')::int published_selected FROM exam_sections s LEFT JOIN mock_test_questions mtq ON mtq.section_id=s.id AND mtq.mock_test_id=$1 LEFT JOIN questions q ON q.id=mtq.question_id WHERE s.stage_id=$2 GROUP BY s.id ORDER BY s.sort_order,s.name",
       [String(req.params.testId), test.rows[0].stage_id],
     );
-    if (
-      !sections.rowCount ||
-      sections.rows.some(
+    const fullPatternReady =
+      Boolean(sections.rowCount) &&
+      sections.rows.every(
         (row) =>
-          Number(row.question_count) <= 0 ||
-          Number(row.question_count) !== Number(row.selected) ||
-          Number(row.question_count) !== Number(row.published_selected),
-      )
-    ) {
+          Number(row.question_count) > 0 &&
+          Number(row.question_count) === Number(row.selected) &&
+          Number(row.question_count) === Number(row.published_selected),
+      );
+    const stagePublishedRes = await client.query(
+      "SELECT count(*)::int total FROM questions q JOIN exam_sections s ON s.id=q.section_id WHERE s.stage_id=$1 AND q.status='published'",
+      [test.rows[0].stage_id],
+    );
+    const stagePublishedTotal = Number(stagePublishedRes.rows[0]?.total ?? 0);
+    const isAutoPartialBankTest =
+      Boolean(test.rows[0].auto_generated) &&
+      !fullPatternReady &&
+      stagePublishedTotal >= MIN_BANK_UPLOAD_QUESTIONS;
+
+    if (!fullPatternReady && !isAutoPartialBankTest) {
       await client.query("ROLLBACK");
       return res
         .status(409)
         .json({
-          error:
-            "This test no longer matches the exam pattern or contains unpublished questions.",
+          error: test.rows[0].auto_generated
+            ? `This Question Bank mock test needs at least ${MIN_BANK_UPLOAD_QUESTIONS} published questions to start.`
+            : "This test no longer matches the exam pattern or contains unpublished questions.",
         });
     }
+
     let questions;
-    if (test.rows[0].selection_mode === "rule_based") {
+    let expectedQuestionCount = sections.rows.reduce(
+      (sum, row) => sum + Number(row.question_count),
+      0,
+    );
+
+    if (isAutoPartialBankTest) {
+      const seenRows = await client.query(
+        "SELECT DISTINCT sa.question_id FROM student_answers sa JOIN test_attempts ta ON ta.id=sa.attempt_id WHERE ta.student_id=$1",
+        [req.session.userId],
+      );
+      const targetCount = Math.min(100, stagePublishedTotal);
+      expectedQuestionCount = targetCount;
+      questions = await client.query(
+        "WITH pool AS (SELECT q.id question_id,q.question_type,q.question_text,q.image_url,pg.title passage_title,pg.passage_text,pg.language passage_language,pg.image_url passage_image_url,q.options,q.topic_name,q.difficulty,q.correct_answer,q.explanation,q.marks,q.negative_marks,sec.id section_id,sec.name section_name,sec.sort_order sec_sort,COALESCE(sec.marks_per_correct,q.marks) effective_marks,COALESCE(sec.negative_marks,q.negative_marks) effective_negative_marks FROM questions q LEFT JOIN passage_groups pg ON pg.id=q.passage_group_id JOIN exam_sections sec ON sec.id=q.section_id WHERE sec.stage_id=$1 AND q.status='published' ORDER BY CASE WHEN NOT (q.id=ANY($2::uuid[])) THEN 0 ELSE 1 END,random() LIMIT $3) SELECT *,(row_number() OVER(ORDER BY sec_sort,random())-1)::int sort_order FROM pool ORDER BY sec_sort,sort_order",
+        [
+          test.rows[0].stage_id,
+          seenRows.rows.map((r: any) => r.question_id),
+          targetCount,
+        ],
+      );
+    } else if (test.rows[0].selection_mode === "rule_based") {
       const seenRows = await client.query(
         "SELECT DISTINCT sa.question_id FROM student_answers sa JOIN test_attempts ta ON ta.id=sa.attempt_id WHERE ta.student_id=$1",
         [req.session.userId],
@@ -289,10 +322,7 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
         [String(req.params.testId)],
       );
     }
-    if (
-      questions.rowCount !==
-      sections.rows.reduce((sum, row) => sum + Number(row.question_count), 0)
-    ) {
+    if (questions.rowCount !== expectedQuestionCount) {
       await client.query("ROLLBACK");
       return res
         .status(409)
@@ -301,12 +331,12 @@ attemptRouter.post("/tests/:testId/attempts", requireAuth, async (req, res) => {
             "This test no longer matches the exam pattern or contains unpublished questions.",
         });
     }
-    const configured = sections.rows.some(
-      (row) => row.duration_seconds !== null,
-    );
-    const incomplete = sections.rows.some(
-      (row) => row.duration_seconds === null,
-    );
+    const configured =
+      !isAutoPartialBankTest &&
+      sections.rows.some((row) => row.duration_seconds !== null);
+    const incomplete =
+      !isAutoPartialBankTest &&
+      sections.rows.some((row) => row.duration_seconds === null);
     const schedule: SectionSlot[] =
       configured && !incomplete
         ? sections.rows.map((row) => ({

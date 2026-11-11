@@ -142,6 +142,14 @@ export function QuestionBankView({
 }: QuestionBankViewProps) {
   const exam = exams[examIndex];
   const stage = exam?.stages[stageIndex];
+  const stagePublishedCount = questions.filter(
+    (q) =>
+      q.exam_name === exam?.name &&
+      q.stage_name === stage?.name &&
+      q.status === "published",
+  ).length;
+  const minRequired = Number(uploadPreview?.minimumRequired ?? 20);
+  const meetsMinimumUpload = confirmRows.length >= minRequired;
 
   return (
     <>
@@ -150,7 +158,7 @@ export function QuestionBankView({
           <div>
             <span className="section-kicker">BULK QUESTION UPLOAD</span>
             <h2>
-              <FileSpreadsheet size={17} /> CSV or Excel import
+              <FileSpreadsheet size={17} /> CSV or Excel import (Min 20 questions)
             </h2>
           </div>
           <a
@@ -215,11 +223,21 @@ export function QuestionBankView({
             </div>
             <button
               className="primary-btn"
-              disabled={!confirmRows.length || busy}
+              disabled={!meetsMinimumUpload || busy}
               onClick={onConfirmUpload}
             >
-              Import {confirmRows.length} valid rows as drafts
+              {meetsMinimumUpload
+                ? `Upload & publish ${confirmRows.length} questions to Mock Tests`
+                : `Minimum ${minRequired} valid questions required (${confirmRows.length}/${minRequired})`}
             </button>
+            {!meetsMinimumUpload && (
+              <div className="min-upload-warning" role="alert">
+                At least <strong>{minRequired} valid questions</strong> are
+                required to upload to the Question Bank and publish to Student
+                Mock Tests (currently {confirmRows.length} valid — add{" "}
+                {minRequired - confirmRows.length} more).
+              </div>
+            )}
             {uploadPreview.errors.length > 0 && (
               <>
                 <a
@@ -253,12 +271,27 @@ export function QuestionBankView({
               </h2>
             </div>
           </div>
+          {exam && stage && (
+            <div
+              className={`stage-readiness-bar ${stagePublishedCount >= 20 ? "ready" : ""}`}
+              role="status"
+            >
+              <strong>
+                {exam.name} · {stage.name}
+              </strong>
+              <span>
+                {stagePublishedCount >= 20
+                  ? `${stagePublishedCount} published questions · Active in Student Mock Tests & Daily Challenge`
+                  : `${stagePublishedCount} / 20 published questions · Add ${20 - stagePublishedCount} more to unlock Student Mock Tests`}
+              </span>
+            </div>
+          )}
           {exam && exam.status !== "published" && (
             <div className="admin-notice" role="status">
               <strong>{exam.name}</strong> is currently in{" "}
-              <strong>{exam.status}</strong> status. Published questions here
-              will not appear to students under Practice or Mock tests until you
-              publish the examination under <strong>Exam setup</strong>.
+              <strong>{exam.status}</strong> status. Uploading or publishing{" "}
+              <strong>20+ questions</strong> will automatically activate it in
+              Student Mock Tests, Practice, and Daily Challenge.
             </div>
           )}
           <div className="question-config">

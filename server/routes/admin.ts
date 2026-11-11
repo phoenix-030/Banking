@@ -8,9 +8,51 @@ import { pool } from '../db';
 import { requireAdmin, validate } from '../middleware';
 import { examSchema, questionSchema } from '../schemas';
 import { selectNonRepeatingQuestions } from '../services/questionSelection';
+import {
+  MIN_BANK_UPLOAD_QUESTIONS,
+  syncStageQuestionBankMockTest,
+  type StageSyncResult,
+} from '../services/questionBankSync';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
+
+async function syncSectionsStage(
+  sectionIds: string[],
+  actorId: string | undefined,
+  autoPublishExam = false,
+): Promise<StageSyncResult[]> {
+  const cleanIds = [...new Set(sectionIds.filter(Boolean))];
+  if (!cleanIds.length) return [];
+
+  const stageRows = await pool.query(
+    'SELECT DISTINCT stage_id FROM exam_sections WHERE id = ANY($1::uuid[])',
+    [cleanIds],
+  );
+  if (!stageRows.rowCount) return [];
+
+  const client = await pool.connect();
+  const results: StageSyncResult[] = [];
+  try {
+    await client.query('BEGIN');
+    for (const row of stageRows.rows) {
+      const synced = await syncStageQuestionBankMockTest(
+        client,
+        row.stage_id,
+        actorId,
+        { autoPublishExam },
+      );
+      if (synced) results.push(synced);
+    }
+    await client.query('COMMIT');
+    return results;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 async function audit(
   actor: string | undefined,
@@ -1090,7 +1132,13 @@ adminRouter.post('/questions', async (req, res) => {
     req.ip
   );
 
-  res.status(201).json({ question: saved.rows[0] });
+  const stageSync = await syncSectionsStage(
+    [question.sectionId],
+    req.session.userId,
+    question.status === 'published',
+  );
+
+  res.status(201).json({ question: saved.rows[0], syncedTests: stageSync });
 });
 
 adminRouter.put('/questions/:id', async (req, res) => {
@@ -1100,6 +1148,11 @@ adminRouter.put('/questions/:id', async (req, res) => {
     question.sectionId,
     question.questionType,
     question.passageGroupId
+  );
+
+  const existingQuestion = await pool.query(
+    'SELECT section_id FROM questions WHERE id = $1',
+    [req.params.id]
   );
 
   const topicId = await upsertTopic(
@@ -1178,7 +1231,13 @@ adminRouter.put('/questions/:id', async (req, res) => {
     req.ip
   );
 
-  res.json({ question: saved.rows[0] });
+  const stageSync = await syncSectionsStage(
+    [existingQuestion.rows[0]?.section_id, question.sectionId],
+    req.session.userId,
+    question.status === 'published',
+  );
+
+  res.json({ question: saved.rows[0], syncedTests: stageSync });
 });
 
 adminRouter.patch('/questions/status', async (req, res) => {
@@ -1198,7 +1257,7 @@ adminRouter.patch('/questions/status', async (req, res) => {
     await client.query('BEGIN');
 
     const rows = await client.query(
-      `SELECT q.id, e.status exam_status
+      `SELECT q.id, s.stage_id, e.status exam_status
        FROM questions q
        JOIN exam_sections s ON s.id = q.section_id
        JOIN exam_stages st ON st.id = s.stage_id
@@ -1216,23 +1275,24 @@ adminRouter.patch('/questions/status', async (req, res) => {
       });
     }
 
-    if (
-      input.status === 'published' &&
-      rows.rows.some(row => row.exam_status !== 'published')
-    ) {
-      await client.query('ROLLBACK');
-
-      return res.status(409).json({
-        error: 'Publish the associated examinations after verifying their official patterns before publishing these questions.'
-      });
-    }
-
     await client.query(
       `UPDATE questions
        SET status = $2, updated_at = now()
        WHERE id = ANY($1::uuid[])`,
       [input.questionIds, input.status]
     );
+
+    const touchedStageIds = [...new Set(rows.rows.map(row => row.stage_id as string))];
+    const syncedTests: StageSyncResult[] = [];
+    for (const stageId of touchedStageIds) {
+      const synced = await syncStageQuestionBankMockTest(
+        client,
+        stageId,
+        req.session.userId,
+        { autoPublishExam: input.status === 'published' },
+      );
+      if (synced) syncedTests.push(synced);
+    }
 
     await client.query(
       `INSERT INTO audit_logs
@@ -1254,7 +1314,8 @@ adminRouter.patch('/questions/status', async (req, res) => {
 
     res.json({
       updated: input.questionIds.length,
-      status: input.status
+      status: input.status,
+      syncedTests,
     });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -1269,7 +1330,7 @@ adminRouter.delete('/questions/:id', async (req, res) => {
     `UPDATE questions
      SET status = 'archived', updated_at = now()
      WHERE id = $1
-     RETURNING id`,
+     RETURNING id, section_id`,
     [req.params.id]
   );
 
@@ -1284,6 +1345,12 @@ adminRouter.delete('/questions/:id', async (req, res) => {
     req.params.id,
     {},
     req.ip
+  );
+
+  await syncSectionsStage(
+    [result.rows[0].section_id],
+    req.session.userId,
+    false,
   );
 
   res.status(204).end();
@@ -1604,12 +1671,16 @@ adminRouter.post('/questions/import/preview', async (req, res) => {
     );
   }
 
+  const validCount = rows.length - errors.length;
+
   res.json({
     batchId: batch.id,
     total: rows.length,
-    successful: rows.length - errors.length,
+    successful: validCount,
     failed: errors.length,
     duplicate: duplicateCount,
+    minimumRequired: MIN_BANK_UPLOAD_QUESTIONS,
+    meetsMinimum: validCount >= MIN_BANK_UPLOAD_QUESTIONS,
     errors: errors.map(({ rowNumber, errors }) => ({
       rowNumber,
       errors
@@ -1662,18 +1733,26 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
     );
 
     const selectedNumbers = [...new Set(input.rowNumbers)];
+    const validItems = selectedNumbers
+      .map(number => staged.find(row => row.rowNumber === number))
+      .filter((item): item is { rowNumber: number; row: Record<string, string>; errors: string[] } =>
+        Boolean(item) && !item!.errors.length && !rejected.has(item!.rowNumber)
+      );
 
-    for (const number of selectedNumbers) {
-      const item = staged.find(row => row.rowNumber === number);
+    if (validItems.length < MIN_BANK_UPLOAD_QUESTIONS) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `Minimum ${MIN_BANK_UPLOAD_QUESTIONS} valid questions are required to upload into the question bank (received ${validItems.length}).`
+      });
+    }
 
-      if (!item || item.errors.length || rejected.has(number)) {
-        continue;
-      }
+    const touchedStageIds = new Set<string>();
 
+    for (const item of validItems) {
       const row = item.row;
 
       const section = await client.query(
-        `SELECT s.id, s.marks_per_correct, s.negative_marks
+        `SELECT s.id, st.id stage_id, s.marks_per_correct, s.negative_marks
          FROM exam_sections s
          JOIN exam_stages st ON st.id = s.stage_id
          JOIN exams e ON e.id = st.exam_id
@@ -1686,6 +1765,7 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
       );
 
       if (!section.rowCount) continue;
+      touchedStageIds.add(section.rows[0].stage_id as string);
 
       const topic = (
         await client.query(
@@ -1716,7 +1796,7 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
            created_by, content_hash)
          VALUES
           ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-           $10, $11, $12, $13, 'draft', $14, $15)
+           $10, $11, $12, $13, 'published', $14, $15)
          ON CONFLICT DO NOTHING
          RETURNING id`,
         [
@@ -1745,6 +1825,17 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
       imported += saved.rowCount ?? 0;
     }
 
+    const syncedTests: StageSyncResult[] = [];
+    for (const stageId of touchedStageIds) {
+      const synced = await syncStageQuestionBankMockTest(
+        client,
+        stageId,
+        req.session.userId,
+        { autoPublishExam: true },
+      );
+      if (synced) syncedTests.push(synced);
+    }
+
     await client.query(
       `UPDATE upload_batches
        SET status = 'confirmed'
@@ -1759,14 +1850,14 @@ adminRouter.post('/questions/import/:batchId/confirm', async (req, res) => {
       [
         req.session.userId,
         req.params.batchId,
-        JSON.stringify({ imported }),
+        JSON.stringify({ imported, syncedTests }),
         req.ip
       ]
     );
 
     await client.query('COMMIT');
 
-    res.json({ imported });
+    res.json({ imported, syncedTests });
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -2062,7 +2153,7 @@ adminRouter.patch('/tests/:id/status', async (req, res) => {
   if (input.status === 'published') {
     const test = await pool.query(
       `SELECT
-         t.id, t.exam_id, t.stage_id, t.duration_seconds,
+         t.id, t.exam_id, t.stage_id, t.duration_seconds, t.auto_generated,
          e.status exam_status
        FROM mock_tests t
        JOIN exams e ON e.id = t.exam_id
@@ -2096,36 +2187,49 @@ adminRouter.patch('/tests/:id/status', async (req, res) => {
       [test.rows[0].stage_id, req.params.id]
     );
 
-    if (
-      !sections.rows.length ||
-      sections.rows.some(section =>
-        Number(section.question_count) <= 0 ||
-        Number(section.question_count) !== Number(section.selected) ||
-        Number(section.question_count) !== Number(section.published_selected)
-      )
-    ) {
-      return res.status(409).json({
-        error: 'Each section must contain its configured number of published questions before this test can be published.'
-      });
-    }
-
-    const timed = sections.rows.some(
-      section => section.duration_seconds !== null
+    const totalPublishedSelected = sections.rows.reduce(
+      (sum, section) => sum + Number(section.published_selected),
+      0
     );
 
-    if (
-      timed &&
-      (
-        sections.rows.some(section => section.duration_seconds === null) ||
-        sections.rows.reduce(
-          (sum, section) => sum + Number(section.duration_seconds),
-          0
-        ) !== Number(test.rows[0].duration_seconds)
-      )
-    ) {
-      return res.status(409).json({
-        error: 'Configure a timer for every section and make their total match the mock test duration.'
-      });
+    if (test.rows[0].auto_generated) {
+      if (totalPublishedSelected < MIN_BANK_UPLOAD_QUESTIONS) {
+        return res.status(409).json({
+          error: `Upload at least ${MIN_BANK_UPLOAD_QUESTIONS} published questions to publish this Question Bank mock test.`
+        });
+      }
+    } else {
+      if (
+        !sections.rows.length ||
+        sections.rows.some(section =>
+          Number(section.question_count) <= 0 ||
+          Number(section.question_count) !== Number(section.selected) ||
+          Number(section.question_count) !== Number(section.published_selected)
+        )
+      ) {
+        return res.status(409).json({
+          error: 'Each section must contain its configured number of published questions before this test can be published.'
+        });
+      }
+
+      const timed = sections.rows.some(
+        section => section.duration_seconds !== null
+      );
+
+      if (
+        timed &&
+        (
+          sections.rows.some(section => section.duration_seconds === null) ||
+          sections.rows.reduce(
+            (sum, section) => sum + Number(section.duration_seconds),
+            0
+          ) !== Number(test.rows[0].duration_seconds)
+        )
+      ) {
+        return res.status(409).json({
+          error: 'Configure a timer for every section and make their total match the mock test duration.'
+        });
+      }
     }
   }
 

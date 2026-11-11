@@ -738,3 +738,39 @@
   color: #828496;
   font-size: 12px
 }
+
+.min-upload-warning {
+  flex-basis: 100%;
+  padding: 10px 12px;
+  border-radius: 7px;
+  border: 1px solid #f4d6ad;
+  background: #fff8ed;
+  color: #8f5c1a;
+  font-size: 13px;
+  line-height: 1.5
+}
+
+.stage-readiness-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 13px;
+  border-radius: 8px;
+  border: 1px solid #eceaf8;
+  background: #f8f7fe;
+  font-size: 13px;
+  color: #5d5b73
+}
+
+.stage-readiness-bar.ready {
+  border-color: #cbeadb;
+  background: #f1fbf6;
+  color: #2f7558
+}
+
+.stage-readiness-bar strong {
+  font-weight: 700
+}

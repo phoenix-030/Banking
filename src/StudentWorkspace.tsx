@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DailyChallengeView } from "./components/student/DailyChallengeView";
+import { ExamInstructionsView } from "./components/student/ExamInstructionsView";
 import { TestRunner } from "./components/student/TestRunner";
+import { exitExamFullscreen, requestExamFullscreen } from "./utils/examLock";
 import { ResultView } from "./components/student/ResultView";
 import { PracticeRunner } from "./components/student/PracticeRunner";
 import { StudentOverview } from "./components/student/StudentOverview";
@@ -73,6 +75,7 @@ export default function StudentWorkspace({
   const [practiceReview, setPracticeReview] = useState<any>(null);
   const [attempt, setAttempt] = useState<any>(null);
   const [attemptQuestions, setAttemptQuestions] = useState<any[]>([]);
+  const [pendingTest, setPendingTest] = useState<any | null>(null);
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<string | null>(null);
   const [review, setReview] = useState(false);
@@ -124,6 +127,7 @@ export default function StudentWorkspace({
   useEffect(() => {
     setBusy(true);
     setError("");
+    setPendingTest(null);
     let task: Promise<any>;
     if (section === "Overview")
       task = Promise.all([
@@ -345,6 +349,11 @@ export default function StudentWorkspace({
     if (answerSaveChains.current.get(id) === pending)
       answerSaveChains.current.delete(id);
   };
+  const confirmStartAttempt = async (testId: string) => {
+    requestExamFullscreen();
+    await startAttempt(testId);
+    setPendingTest(null);
+  };
   const submit = async (auto = false) => {
     if (!attemptId || submitted.current) return;
     if (
@@ -361,13 +370,14 @@ export default function StudentWorkspace({
         body: JSON.stringify({ auto }),
       });
       const done = await api(`/attempts/${attemptId}/results`);
+      exitExamFullscreen();
       setResult(done);
       setAttempt(null);
       setAttemptId("");
       notifyActivityUpdated();
       onToast(
         auto
-          ? "Time ended. Your answers were submitted automatically."
+          ? "Exam ended or locked out. Your answers were submitted automatically."
           : "Mock test submitted.",
       );
     } catch (e) {
@@ -393,6 +403,7 @@ export default function StudentWorkspace({
         setAttemptQuestions(current.questions);
       } else {
         const done = await api(`/attempts/${attemptId}/results`);
+        exitExamFullscreen();
         setResult(done);
         setAttempt(null);
         setAttemptId("");
@@ -663,8 +674,26 @@ export default function StudentWorkspace({
         saveState={answerSaveState}
         onSave={saveAnswer}
         onSubmit={() => submit(false)}
+        onAutoSubmit={() => void submit(true)}
         onError={setError}
       />
+    );
+  if (pendingTest && section === "Mock tests")
+    return (
+      <div className="student-workspace">
+        {error && (
+          <div className="admin-error" role="alert">
+            {error}
+            <button onClick={() => setError("")}>Dismiss</button>
+          </div>
+        )}
+        <ExamInstructionsView
+          test={pendingTest}
+          busy={busy}
+          onBack={() => setPendingTest(null)}
+          onConfirmStart={() => void confirmStartAttempt(pendingTest.id)}
+        />
+      </div>
     );
   if (result)
     return (
@@ -743,7 +772,9 @@ export default function StudentWorkspace({
           examFilter={testExamFilter}
           setExamFilter={setTestExamFilter}
           busy={busy}
-          onStartAttempt={startAttempt}
+          onStartAttempt={(testId) =>
+            setPendingTest(tests.find((t) => t.id === testId) ?? null)
+          }
         />
       )}
       {section === "Practice" && (

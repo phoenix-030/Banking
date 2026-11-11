@@ -1,12 +1,22 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Maximize2,
+  MousePointerClick,
+  ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
 import { PassageBlock } from "./PassageBlock";
+import {
+  activateExamTabLock,
+  requestExamFullscreen,
+} from "../../utils/examLock";
+
+const MAX_TAB_VIOLATIONS = 3;
 
 export function TestRunner({
   attempt,
@@ -21,6 +31,7 @@ export function TestRunner({
   saveState,
   onSave,
   onSubmit,
+  onAutoSubmit,
   onError,
 }: {
   attempt: any;
@@ -35,6 +46,7 @@ export function TestRunner({
   saveState: "saved" | "saving" | "error";
   onSave: (q: any, a: string | null, m: boolean) => Promise<void>;
   onSubmit: () => void;
+  onAutoSubmit: () => void;
   onError: (s: string) => void;
 }) {
   const q = questions[index];
@@ -42,9 +54,159 @@ export function TestRunner({
   const baseSeconds = useRef(0);
   const choiceRef = useRef(choice);
   const reviewRef = useRef(review);
+  const onAutoSubmitRef = useRef(onAutoSubmit);
+  const onErrorRef = useRef(onError);
   choiceRef.current = choice;
   reviewRef.current = review;
+  onAutoSubmitRef.current = onAutoSubmit;
+  onErrorRef.current = onError;
   const answerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [violations, setViolations] = useState(0);
+  const [proctorAlert, setProctorAlert] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(() =>
+    Boolean(typeof document !== "undefined" && document.fullscreenElement),
+  );
+  const [camClock, setCamClock] = useState(() =>
+    new Date().toLocaleTimeString(),
+  );
+  const lastViolationAt = useRef(0);
+  const keyboardNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const triggeredAutoSubmit = useRef(false);
+
+  useEffect(() => {
+    const tick = window.setInterval(() => {
+      setCamClock(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => window.clearInterval(tick);
+  }, []);
+
+  useEffect(() => {
+    const recordViolation = (reason: string) => {
+      const now = Date.now();
+      if (now - lastViolationAt.current < 800 || triggeredAutoSubmit.current) {
+        return;
+      }
+      lastViolationAt.current = now;
+      setViolations((prev) => {
+        const next = prev + 1;
+        if (next >= MAX_TAB_VIOLATIONS && !triggeredAutoSubmit.current) {
+          triggeredAutoSubmit.current = true;
+          onErrorRef.current(
+            "Multiple tab or window switches detected. Your exam has been automatically submitted.",
+          );
+          onAutoSubmitRef.current();
+        } else {
+          setProctorAlert(
+            `Proctor warning (${next}/${MAX_TAB_VIOLATIONS}): ${reason}. Exam will auto-submit after ${MAX_TAB_VIOLATIONS} violations.`,
+          );
+        }
+        return next;
+      });
+    };
+
+    const releaseTabLock = activateExamTabLock(attempt.test_name, () => {
+      recordViolation("Companion HHK tab opened and locked automatically");
+    });
+
+    const showKeyboardNotice = () => {
+      setProctorAlert(
+        "Keyboard access is disabled during the exam. Please use your mouse only.",
+      );
+      if (keyboardNoticeTimer.current) {
+        clearTimeout(keyboardNoticeTimer.current);
+      }
+      keyboardNoticeTimer.current = setTimeout(() => {
+        setProctorAlert("");
+      }, 3000);
+    };
+
+    const blockKeyboard = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      if (e.type === "keydown") {
+        showKeyboardNotice();
+      }
+      return false;
+    };
+
+    const blockClipboardOrMenu = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const blurOnMouseUp = () => {
+      window.requestAnimationFrame(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        recordViolation("Tab switch or browser minimize detected");
+      }
+    };
+
+    const onWindowBlur = () => {
+      recordViolation("Window focus left the exam screen");
+    };
+
+    const onFullscreenChange = () => {
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreen(active);
+    };
+
+    window.addEventListener("keydown", blockKeyboard, { capture: true });
+    window.addEventListener("keyup", blockKeyboard, { capture: true });
+    window.addEventListener("keypress", blockKeyboard, { capture: true });
+    document.addEventListener("contextmenu", blockClipboardOrMenu, {
+      capture: true,
+    });
+    document.addEventListener("copy", blockClipboardOrMenu, { capture: true });
+    document.addEventListener("cut", blockClipboardOrMenu, { capture: true });
+    document.addEventListener("paste", blockClipboardOrMenu, { capture: true });
+    document.addEventListener("dragstart", blockClipboardOrMenu, {
+      capture: true,
+    });
+    document.addEventListener("mouseup", blurOnMouseUp);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
+    return () => {
+      releaseTabLock();
+      if (keyboardNoticeTimer.current) {
+        clearTimeout(keyboardNoticeTimer.current);
+      }
+      window.removeEventListener("keydown", blockKeyboard, { capture: true });
+      window.removeEventListener("keyup", blockKeyboard, { capture: true });
+      window.removeEventListener("keypress", blockKeyboard, { capture: true });
+      document.removeEventListener("contextmenu", blockClipboardOrMenu, {
+        capture: true,
+      });
+      document.removeEventListener("copy", blockClipboardOrMenu, {
+        capture: true,
+      });
+      document.removeEventListener("cut", blockClipboardOrMenu, {
+        capture: true,
+      });
+      document.removeEventListener("paste", blockClipboardOrMenu, {
+        capture: true,
+      });
+      document.removeEventListener("dragstart", blockClipboardOrMenu, {
+        capture: true,
+      });
+      document.removeEventListener("mouseup", blurOnMouseUp);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, [attempt.id, attempt.test_name]);
 
   useEffect(() => {
     if (!q) return;
@@ -123,11 +285,33 @@ export function TestRunner({
   }
 
   return (
-    <div className="cbt-screen">
+    <div
+      className="cbt-screen"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <header className="cbt-header">
         <div>
           <span className="exam-pill">{attempt.test_name}</span>
           <h1>{questions[index].section_name}</h1>
+        </div>
+        <div className="cbt-proctor-badges">
+          <span className="proctor-lock-pill" title="Keyboard input is disabled during the exam">
+            <MousePointerClick size={14} /> Mouse-only access
+          </span>
+          {violations > 0 && (
+            <span className="proctor-violation-pill">
+              <ShieldAlert size={14} /> Warnings: {violations}/{MAX_TAB_VIOLATIONS}
+            </span>
+          )}
+          {!isFullscreen && (
+            <button
+              type="button"
+              className="outline-btn admin-action proctor-fs-btn"
+              onClick={requestExamFullscreen}
+            >
+              <Maximize2 size={13} /> Enter Fullscreen
+            </button>
+          )}
         </div>
         <div className="cbt-timer">
           <Clock3 size={17} />
@@ -142,6 +326,15 @@ export function TestRunner({
           Submit test
         </button>
       </header>
+      {proctorAlert && (
+        <div className="proctor-alert-banner" role="alert">
+          <ShieldAlert size={16} />
+          <span>{proctorAlert}</span>
+          <b>
+            Violations: {violations}/{MAX_TAB_VIOLATIONS}
+          </b>
+        </div>
+      )}
       <div className="cbt-main">
         <div className="cbt-question-card">
           <div className="cbt-question-meta">
@@ -221,6 +414,24 @@ export function TestRunner({
           </div>
         </div>
         <aside className="cbt-palette">
+          <section className="proctor-camera-box" aria-label="Proctor camera monitor">
+            <div className="proctor-cam-head">
+              <span className="proctor-cam-status">
+                <i className="proctor-live-dot" />
+                CAMERA WATCHING
+              </span>
+              <small>{camClock}</small>
+            </div>
+            <div className="proctor-cam-feed">
+              <div className="proctor-cam-reticle">
+                <Camera size={24} />
+              </div>
+              <span>PROCTOR MONITOR ACTIVE</span>
+            </div>
+            <p className="proctor-cam-note">
+              Dummy camera monitor · Video is not recorded
+            </p>
+          </section>
           <strong>Question palette</strong>
           <p>
             {answered} answered ·{" "}
@@ -264,7 +475,7 @@ export function TestRunner({
               : "complete"}
         </span>
         <span>
-          <ShieldCheck size={14} /> Server-timed attempt
+          <ShieldCheck size={14} /> Mouse-only · Server-timed · No video recording
         </span>
         <button className="primary-btn" onClick={() => void submitCurrent()}>
           Submit test

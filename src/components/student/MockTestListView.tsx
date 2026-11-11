@@ -62,6 +62,9 @@ export function MockTestListView({
               <span>
                 <Clock3 size={14} /> {Math.round(t.duration_seconds / 60)}{" "}
                 minutes
+                {Number(t.question_count) > 0
+                  ? ` · ${t.question_count} questions`
+                  : ""}
               </span>
               {t.pattern_cycle && (
                 <span className="pattern-cycle-label">
@@ -84,7 +87,7 @@ export function MockTestListView({
               disabled={busy}
               onClick={() => onStartAttempt(t.id)}
             >
-              <Play size={14} fill="currentColor" /> Start test
+              <Play size={14} fill="currentColor" /> Instructions &amp; start
             </button>
           </div>
         ))

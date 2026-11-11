@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ExamOptGroups } from "./utils/examCategories";
+import { subscribeCompanionTabLock } from "./utils/examLock";
 import {
   Activity,
   ArrowRight,
@@ -62,6 +63,10 @@ export default function App() {
   const [active, setActive] = useState("Overview");
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [lockedOutInfo, setLockedOutInfo] = useState<{
+    testName: string;
+  } | null>(null);
+  useEffect(() => subscribeCompanionTabLock(setLockedOutInfo), []);
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then(async (r) => (r.ok ? (await r.json()).user : null))
@@ -81,6 +86,27 @@ export default function App() {
     setUser(null);
     setActive("Overview");
   }
+  if (lockedOutInfo)
+    return (
+      <div className="cbt-locked-tab" role="alertdialog" aria-modal="true">
+        <div className="panel">
+          <span className="exam-pill">SINGLE-TAB EXAM LOCKDOWN</span>
+          <h1>This companion tab has been locked</h1>
+          <p>
+            An active examination ({lockedOutInfo.testName}) is running in your
+            primary browser tab. Other HHK tabs are automatically closed or
+            locked to preserve exam integrity.
+          </p>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => window.close()}
+          >
+            Close this tab
+          </button>
+        </div>
+      </div>
+    );
   if (loading)
     return (
       <div className="auth-loading">Loading your secure HHK workspace…</div>

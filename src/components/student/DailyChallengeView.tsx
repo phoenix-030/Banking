@@ -58,8 +58,9 @@ export function DailyChallengeView({
           </div>
           <h1>Today’s challenge</h1>
           <p>
-            A short set drawn from reasoning, quantitative aptitude, English,
-            and general awareness.
+            One fresh daily challenge question drawn from your published
+            question bank — options shuffle dynamically and count toward your
+            live streak.
           </p>
         </div>
         <div className="challenge-score">
@@ -136,22 +137,28 @@ export function DailyChallengeView({
           </div>
         )}
         <div className="cbt-controls">
-          <span>{progress.total - progress.answered} remaining</span>
+          <span>
+            {progress.total - progress.answered} remaining
+          </span>
           <div />
-          <button
-            className="outline-btn"
-            disabled={current === 0}
-            onClick={() => setIndex(current - 1)}
-          >
-            <ChevronLeft size={15} /> Previous
-          </button>
-          <button
-            className="primary-btn"
-            disabled={current === questions.length - 1}
-            onClick={() => setIndex(current + 1)}
-          >
-            Next question <ChevronRight size={15} />
-          </button>
+          {questions.length > 1 && (
+            <>
+              <button
+                className="outline-btn"
+                disabled={current === 0}
+                onClick={() => setIndex(current - 1)}
+              >
+                <ChevronLeft size={15} /> Previous
+              </button>
+              <button
+                className="primary-btn"
+                disabled={current === questions.length - 1}
+                onClick={() => setIndex(current + 1)}
+              >
+                Next question <ChevronRight size={15} />
+              </button>
+            </>
+          )}
         </div>
       </section>
     </>
