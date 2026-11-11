@@ -83,7 +83,7 @@ export function PracticeSetupView({
                     getKey={(e: any) => e.id}
                     getValue={(e: any) => e.id}
                     getLabel={(e: any) =>
-                      `${e.name}${readyExamIds.has(e.id) ? " · Ready" : " · Coming soon"}`
+                      `${e.name}${readyExamIds.has(e.id) ? " · Ready" : ""}`
                     }
                   />
                 </select>
