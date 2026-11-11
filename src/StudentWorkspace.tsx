@@ -8,7 +8,6 @@ import { PerformanceView } from "./components/student/PerformanceView";
 import { MockTestListView } from "./components/student/MockTestListView";
 import { PracticeSetupView } from "./components/student/PracticeSetupView";
 import { BookmarksView } from "./components/student/BookmarksView";
-import { PyqView } from "./components/student/PyqView";
 import { StudentCurrentAffairs } from "./components/student/StudentCurrentAffairs";
 import { LeaderboardView } from "./components/student/LeaderboardView";
 import { AchievementsView } from "./components/student/AchievementsView";
@@ -43,8 +42,6 @@ export default function StudentWorkspace({
   const [result, setResult] = useState<any>(null);
   const [tests, setTests] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<any[]>([]);
-  const [pyq, setPyq] = useState<any[]>([]);
-  const [publishedExams, setPublishedExams] = useState<any[]>([]);
   const [affairs, setAffairs] = useState<any[]>([]);
   const [period, setPeriod] = useState("weekly");
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -77,11 +74,6 @@ export default function StudentWorkspace({
   const [review, setReview] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [clockOffset, setClockOffset] = useState(0);
-  const [filterExam, setFilterExam] = useState("");
-  const [filterYear, setFilterYear] = useState("");
-  const [filterSection, setFilterSection] = useState("");
-  const [filterTopic, setFilterTopic] = useState("");
-  const [filterDifficulty, setFilterDifficulty] = useState("");
   const [affairQuiz, setAffairQuiz] = useState<any>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState<any[]>([]);
@@ -94,7 +86,6 @@ export default function StudentWorkspace({
   const sectionRefresh = useRef(false);
   const [affairCategories, setAffairCategories] = useState<any[]>([]);
   const [affairCategory, setAffairCategory] = useState("");
-  const [filterStage, setFilterStage] = useState("");
   async function loadDashboard() {
     setData(await api("/dashboard"));
   }
@@ -151,21 +142,7 @@ export default function StudentWorkspace({
         setBookmarkedQuestions(d.bookmarks);
         setBookmarks(new Set(d.bookmarks.map((q: any) => q.id)));
       });
-    else if (section === "Previous year questions") {
-      const params = new URLSearchParams();
-      if (filterExam) params.set("examId", filterExam);
-      if (filterStage) params.set("stage", filterStage);
-      if (filterYear) params.set("year", filterYear);
-      if (filterSection) params.set("section", filterSection);
-      if (filterTopic) params.set("topic", filterTopic);
-      if (filterDifficulty) params.set("difficulty", filterDifficulty);
-      task = Promise.all([api("/exams"), api(`/pyq?${params}`)]).then(
-        ([e, d]) => {
-          setPublishedExams(e.exams);
-          setPyq(d.questions);
-        },
-      );
-    } else if (section === "Current affairs")
+    else if (section === "Current affairs")
       task = api("/current-affairs").then((a) => setAffairs(a.items));
     else if (section === "Leaderboard")
       task = api(`/leaderboard?period=${period}`).then((d) =>
@@ -186,16 +163,7 @@ export default function StudentWorkspace({
       });
     else task = Promise.resolve();
     task.catch((e) => setError(e.message)).finally(() => setBusy(false));
-  }, [
-    section,
-    period,
-    filterExam,
-    filterStage,
-    filterYear,
-    filterSection,
-    filterTopic,
-    filterDifficulty,
-  ]);
+  }, [section, period]);
   useEffect(() => {
     if (section !== "Current affairs") return;
     const params = new URLSearchParams();
@@ -699,26 +667,6 @@ export default function StudentWorkspace({
           bookmarkedQuestions={bookmarkedQuestions}
           busy={busy}
           startBookmarkedQuestion={startBookmarkedQuestion}
-          toggleBookmark={toggleBookmark}
-        />
-      )}
-      {section === "Previous year questions" && (
-        <PyqView
-          filterExam={filterExam}
-          setFilterExam={setFilterExam}
-          publishedExams={publishedExams}
-          filterStage={filterStage}
-          setFilterStage={setFilterStage}
-          filterYear={filterYear}
-          setFilterYear={setFilterYear}
-          filterSection={filterSection}
-          setFilterSection={setFilterSection}
-          filterTopic={filterTopic}
-          setFilterTopic={setFilterTopic}
-          filterDifficulty={filterDifficulty}
-          setFilterDifficulty={setFilterDifficulty}
-          pyq={pyq}
-          bookmarks={bookmarks}
           toggleBookmark={toggleBookmark}
         />
       )}

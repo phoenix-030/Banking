@@ -39,7 +39,6 @@ const studentPages = [
   ["Bookmarks", Bookmark],
   ["Mock tests", Target],
   ["Performance", Activity],
-  ["Previous year questions", BookOpen],
   ["Current affairs", CalendarDays],
   ["Leaderboard", Trophy],
   ["Achievements", ShieldCheck],

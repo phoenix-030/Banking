@@ -82,8 +82,7 @@ export function BookmarksView({
       </div>
       {!bookmarkedQuestions.length && !busy && (
         <div className="panel empty-questions">
-          No bookmarked questions yet. Save a question from Previous year
-          questions or Practice to find it here.
+          No bookmarked questions yet. Save a question from Practice to find it here.
         </div>
       )}
     </>
