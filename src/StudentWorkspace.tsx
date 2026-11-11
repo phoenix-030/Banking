@@ -45,7 +45,8 @@ export default function StudentWorkspace({
   const [affairs, setAffairs] = useState<any[]>([]);
   const [period, setPeriod] = useState("weekly");
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievementData, setAchievementData] = useState<any>(null);
+  const [syncingAchievements, setSyncingAchievements] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [profileExams, setProfileExams] = useState<any[]>([]);
   const [profileDraft, setProfileDraft] = useState({
@@ -88,6 +89,20 @@ export default function StudentWorkspace({
   const [affairCategory, setAffairCategory] = useState("");
   async function loadDashboard() {
     setData(await api("/dashboard"));
+  }
+  function notifyActivityUpdated() {
+    window.dispatchEvent(new Event("hhk:activity-updated"));
+  }
+  async function loadAchievements(silent = false) {
+    setSyncingAchievements(true);
+    try {
+      const snapshot = await api("/achievements");
+      setAchievementData(snapshot);
+    } catch (e) {
+      if (!silent) setError((e as Error).message);
+    } finally {
+      setSyncingAchievements(false);
+    }
   }
   useEffect(() => {
     api("/attempts/active")
@@ -149,7 +164,7 @@ export default function StudentWorkspace({
         setLeaderboard(d.entries),
       );
     else if (section === "Achievements")
-      task = api("/achievements").then((d) => setAchievements(d.achievements));
+      task = api("/achievements").then(setAchievementData);
     else if (section === "Profile")
       task = Promise.all([api("/auth/me"), api("/exams")]).then(([p, e]) => {
         setProfile(p);
@@ -178,6 +193,20 @@ export default function StudentWorkspace({
       })
       .catch((e) => setError(e.message));
   }, [section, affairCategory]);
+  useEffect(() => {
+    if (section !== "Achievements") return;
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void loadAchievements(true);
+    };
+    const timer = window.setInterval(refreshIfVisible, 15_000);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [section]);
   const startAttempt = async (testId: string) => {
     setBusy(true);
     setError("");
@@ -273,6 +302,7 @@ export default function StudentWorkspace({
       setResult(done);
       setAttempt(null);
       setAttemptId("");
+      notifyActivityUpdated();
       onToast(
         auto
           ? "Time ended. Your answers were submitted automatically."
@@ -385,6 +415,7 @@ export default function StudentWorkspace({
         ).question,
       );
       setPracticeResponses((await api("/practice/responses")).responses);
+      notifyActivityUpdated();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -499,6 +530,7 @@ export default function StudentWorkspace({
             : item,
         ),
       }));
+      notifyActivityUpdated();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -549,6 +581,7 @@ export default function StudentWorkspace({
             (feedback.alreadyAnswered || !feedback.correct ? 0 : 1),
         },
       }));
+      notifyActivityUpdated();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -691,7 +724,12 @@ export default function StudentWorkspace({
         />
       )}
       {section === "Achievements" && (
-        <AchievementsView achievements={achievements} />
+        <AchievementsView
+          data={achievementData}
+          refreshing={syncingAchievements}
+          onRefresh={() => void loadAchievements(false)}
+          onNavigate={onNavigate}
+        />
       )}
       {section === "Profile" && profile && (
         <StudentProfileView

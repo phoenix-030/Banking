@@ -139,15 +139,13 @@ export default function App() {
             <div className="workspace-label">YOUR PREPARATION</div>
             <TargetExamSelector onToast={flash} />
             <div className="side-separator" />
-            <div className="student-streak">
-              <span>
-                <Flame size={17} fill="currentColor" />
-              </span>
-              <div>
-                <strong>Keep your streak alive</strong>
-                <small>Complete a practice session today.</small>
-              </div>
-            </div>
+            <SidebarStreak
+              userId={user.id}
+              onOpenAchievements={() => {
+                setActive("Achievements");
+                setMenuOpen(false);
+              }}
+            />
           </>
         )}
         <div className="sidebar-bottom">
@@ -322,5 +320,77 @@ function TargetExamSelector({
       </div>
       {error && <small className="target-error">{error}</small>}
     </div>
+  );
+}
+
+function SidebarStreak({
+  userId,
+  onOpenAchievements,
+}: {
+  userId: string;
+  onOpenAchievements: () => void;
+}) {
+  const [streak, setStreak] = useState<{
+    currentDays: number;
+    bestDays: number;
+    studiedToday: boolean;
+    todayQuestions: number;
+    status: "active_today" | "at_risk" | "inactive";
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      fetch("/api/achievements", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (active && d?.streak) setStreak(d.streak);
+        })
+        .catch(() => undefined);
+    };
+    load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+    window.addEventListener("hhk:activity-updated", load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("hhk:activity-updated", load);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, [userId]);
+
+  const days = streak?.currentDays ?? 0;
+  const status = streak?.status ?? "inactive";
+  const title =
+    status === "active_today"
+      ? `${days}-day streak active`
+      : days > 0
+        ? `Keep your ${days}-day streak`
+        : "Start your daily streak";
+  const subtitle =
+    status === "active_today"
+      ? `${streak?.todayQuestions ?? 0} solved today · View milestones`
+      : days > 0
+        ? "Solve 1 question today to extend"
+        : "Solve a question to ignite today";
+
+  return (
+    <button
+      type="button"
+      className={`student-streak ${status}`}
+      onClick={onOpenAchievements}
+      title="Open live streaks and achievements"
+    >
+      <span>
+        <Flame size={17} fill="currentColor" />
+      </span>
+      <div>
+        <strong>{title}</strong>
+        <small>{subtitle}</small>
+      </div>
+    </button>
   );
 }

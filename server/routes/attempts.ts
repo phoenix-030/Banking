@@ -3,6 +3,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool } from "../db";
 import { requireAuth, validate } from "../middleware";
+import {
+  getLiveAchievementsSnapshot,
+  recordStudyDay,
+  syncMilestones,
+} from "../services/milestones";
 
 export const attemptRouter = Router();
 async function scoreAttempt(
@@ -109,49 +114,9 @@ async function scoreAttempt(
     "INSERT INTO leaderboard_records(student_id,mock_test_id,attempt_id,score,period_start,period_type) VALUES($1,$2,$3,$4,date_trunc('week',now())::date,'weekly'),($1,$2,$3,$4,date_trunc('month',now())::date,'monthly'),($1,$2,$3,$4,'2000-01-01','overall') ON CONFLICT(attempt_id,period_type) DO NOTHING",
     [saved.rows[0].student_id, test.id, id, score],
   );
-  const streak = await client.query(
-    "INSERT INTO student_streaks(student_id,current_days,best_days,last_activity_date) VALUES($1,1,1,current_date) ON CONFLICT(student_id) DO UPDATE SET current_days=CASE WHEN student_streaks.last_activity_date=current_date THEN student_streaks.current_days WHEN student_streaks.last_activity_date=current_date-1 THEN student_streaks.current_days+1 ELSE 1 END,best_days=GREATEST(student_streaks.best_days,CASE WHEN student_streaks.last_activity_date=current_date THEN student_streaks.current_days WHEN student_streaks.last_activity_date=current_date-1 THEN student_streaks.current_days+1 ELSE 1 END),last_activity_date=current_date RETURNING current_days",
-    [saved.rows[0].student_id],
-  );
   const studentId = saved.rows[0].student_id;
-  await client.query(
-    "INSERT INTO student_achievements(student_id,achievement_id) SELECT $1,id FROM achievements WHERE code='first_mock' ON CONFLICT DO NOTHING",
-    [studentId],
-  );
-  if (streak.rows[0].current_days >= 7)
-    await client.query(
-      "INSERT INTO student_achievements(student_id,achievement_id) SELECT $1,id FROM achievements WHERE code='seven_day_streak' ON CONFLICT DO NOTHING",
-      [studentId],
-    );
-  if (correct + wrong > 0 && correct / (correct + wrong) >= 0.9)
-    await client.query(
-      "INSERT INTO student_achievements(student_id,achievement_id) SELECT $1,id FROM achievements WHERE code='ninety_accuracy' ON CONFLICT DO NOTHING",
-      [studentId],
-    );
-  const totals = await client.query(
-    "SELECT (SELECT count(*) FROM student_answers sa JOIN test_attempts ta ON ta.id=sa.attempt_id WHERE ta.student_id=$1 AND ta.status<>'in_progress' AND sa.selected_answer IS NOT NULL)+(SELECT count(*) FROM practice_answers pa JOIN practice_sessions ps ON ps.id=pa.session_id WHERE ps.student_id=$1 AND pa.selected_answer IS NOT NULL)+(SELECT count(*) FROM current_affairs_answers WHERE student_id=$1) questions",
-    [studentId],
-  );
-  if (Number(totals.rows[0].questions) >= 100)
-    await client.query(
-      "INSERT INTO student_achievements(student_id,achievement_id) SELECT $1,id FROM achievements WHERE code='hundred_questions' ON CONFLICT DO NOTHING",
-      [studentId],
-    );
-  for (const [period, bucket] of [
-    ["weekly", "week"],
-    ["monthly", "month"],
-    ["overall", "month"],
-  ] as const) {
-    const rank = await client.query(
-      "WITH ranked AS (SELECT student_id,rank() OVER(ORDER BY max(score) DESC,count(DISTINCT attempt_id) DESC) position FROM leaderboard_records WHERE period_type=$1 AND ($1='overall' OR period_start>=date_trunc($2,now())::date) GROUP BY student_id) SELECT position FROM ranked WHERE student_id=$3",
-      [period, bucket, studentId],
-    );
-    if (Number(rank.rows[0]?.position) <= 10)
-      await client.query(
-        "INSERT INTO student_achievements(student_id,achievement_id) SELECT $1,id FROM achievements WHERE code='top_ten' ON CONFLICT DO NOTHING",
-        [studentId],
-      );
-  }
+  await recordStudyDay(studentId, client);
+  await syncMilestones(studentId, client);
   return saved.rows[0];
 }
 type SectionSlot = {
@@ -668,9 +633,6 @@ attemptRouter.get("/leaderboard", requireAuth, async (req, res) => {
   res.json({ period, entries: rows.rows });
 });
 attemptRouter.get("/achievements", requireAuth, async (req, res) => {
-  const rows = await pool.query(
-    "SELECT a.code,a.name,a.description,sa.earned_at FROM achievements a LEFT JOIN student_achievements sa ON sa.achievement_id=a.id AND sa.student_id=$1 ORDER BY a.name",
-    [req.session.userId],
-  );
-  res.json({ achievements: rows.rows });
+  const snapshot = await getLiveAchievementsSnapshot(req.session.userId!);
+  res.json(snapshot);
 });
